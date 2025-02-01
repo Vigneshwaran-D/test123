@@ -1,0 +1,46 @@
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+/* Bubble Styles */
+.bubble {
+    fill-opacity: 0.7;
+    stroke-width: 1px;
+    stroke: #fff;
+    transition: fill-opacity 0.3s ease;
+}
+
+.bubble:hover {
+    fill-opacity: 1;
+    stroke-width: 2px;
+}
+
+/* Tooltip Styles */
+.tooltip {
+    position: absolute;
+    padding: 8px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    pointer-events: none;
+    font-family: sans-serif;
+    font-size: 12px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Legend Styles */
+.legend {
+    font-size: 12px;
+    font-family: Arial, sans-serif;
+}
+
+.legend rect {
+    stroke: #ccc;
+    stroke-width: 1px;
+}

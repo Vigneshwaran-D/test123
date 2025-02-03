@@ -1,35 +1,1121 @@
+// // Configuration
+// const width = 1200;
+// const height = 800;
+// const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+// // Load and process data
+// d3.csv("employee_activities.csv").then(data => {
+//     // Process data - group by employee and calculate total hours
+//     const employees = d3.rollup(data,
+//         v => ({
+//             totalHours: d3.sum(v, d => +d.Duration_Hours),
+//             tasks: v,
+//             shiftStart: d3.min(v, d => d.ShiftStart),
+//             shiftEnd: d3.min(v, d => d.ShiftEnd)
+//         }),
+//         d => d.EmployeeID
+//     );
+
+//     const nodes = Array.from(employees, ([id, details]) => ({
+//         id,
+//         ...details,
+//         radius: Math.sqrt(details.totalHours) * 4,
+//         category: d3.max(details.tasks, d => d.TaskCategory)
+//     }));
+
+//     // Create simulation
+//     const simulation = d3.forceSimulation(nodes)
+//         .force("charge", d3.forceManyBody().strength(5))
+//         .force("collide", d3.forceCollide().radius(d => d.radius + 2))
+//         .force("center", d3.forceCenter(width / 2, height / 2))
+//         .force("x", d3.forceX(width / 2).strength(0.05))
+//         .force("y", d3.forceY(height / 2).strength(0.05));
+
+//     // Create SVG
+//     const svg = d3.select("#chart")
+//         .append("svg")
+//         .attr("width", width)
+//         .attr("height", height);
+
+//     // Create bubbles
+//     const bubbles = svg.selectAll("circle")
+//         .data(nodes)
+//         .enter().append("circle")
+//         .attr("class", "bubble")
+//         .attr("r", d => d.radius)
+//         .style("fill", d => colorScale(d.category));
+
+//     // Add tooltip
+//     const tooltip = d3.select("body").append("div")
+//         .attr("class", "tooltip")
+//         .style("opacity", 0);
+
+//     // Add interaction
+//     bubbles.on("mouseover", (event, d) => {
+//             tooltip.transition()
+//                 .style("opacity", 0.9);
+//             tooltip.html(`Employee: ${d.id}<br>
+//                         Total Hours: ${d.totalHours.toFixed(2)}<br>
+//                         Shift: ${d.shiftStart} - ${d.shiftEnd}<br>
+//                         Main Task: ${d.category}`)
+//                 .style("left", (event.pageX + 10) + "px")
+//                 .style("top", (event.pageY - 28) + "px");
+//         })
+//         .on("mouseout", () => {
+//             tooltip.transition().style("opacity", 0);
+//         });
+
+//     // Update positions
+//     simulation.on("tick", () => {
+//         bubbles
+//             .attr("cx", d => d.x)
+//             .attr("cy", d => d.y);
+//     });
+
+//     // Add periodic movement
+//     setInterval(() => {
+//         simulation.force("x", d3.forceX(Math.random() * width).strength(0.05));
+//         simulation.force("y", d3.forceY(Math.random() * height).strength(0.05));
+//         simulation.alpha(0.3).restart();
+//     }, 3000);
+
+//     // Add legend
+//     const legend = svg.selectAll(".legend")
+//         .data(colorScale.domain())
+//         .enter().append("g")
+//         .attr("class", "legend")
+//         .attr("transform", (d, i) => `translate(20,${20 + i * 20})`);
+
+//     legend.append("rect")
+//         .attr("width", 18)
+//         .attr("height", 18)
+//         .style("fill", colorScale);
+
+//     legend.append("text")
+//         .attr("x", 24)
+//         .attr("y", 9)
+//         .attr("dy", ".35em")
+//         .text(d => d);
+// });
+
+
+
+// // Configuration
+// const width = 1200;
+// const height = 800;
+// const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+// // Time parsing and formatting functions
+// const parseTime = timeStr => {
+//     const [hours, minutes] = timeStr.split(':').map(Number);
+//     return hours * 3600 + minutes * 60;
+// };
+
+// const formatTime = seconds => {
+//     const hours = Math.floor(seconds / 3600);
+//     const minutes = Math.floor((seconds % 3600) / 60);
+//     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+// };
+
+// // Load and process data
+// d3.csv("employee_activities.csv").then(data => {
+//     // Process employee activities
+//     const employeeActivities = d3.group(data, d => d.EmployeeID);
+    
+//     // Create timeline data structure
+//     const timelineData = new Map();
+//     employeeActivities.forEach((activities, employeeId) => {
+//         activities.forEach(activity => {
+//             const startSeconds = parseTime(activity.StartTime);
+//             const endSeconds = parseTime(activity.EndTime);
+            
+//             if (!timelineData.has(employeeId)) {
+//                 timelineData.set(employeeId, []);
+//             }
+            
+//             timelineData.get(employeeId).push({
+//                 startTime: startSeconds,
+//                 endTime: endSeconds,
+//                 category: activity.TaskCategory,
+//                 duration: +activity.Duration_Hours
+//             });
+//         });
+//     });
+
+//     // Get unique categories
+//     const categories = [...new Set(data.map(d => d.TaskCategory))];
+
+//     // Create category positions (in a grid layout)
+//     const categoryPositions = {};
+//     const columns = Math.ceil(Math.sqrt(categories.length));
+//     const rows = Math.ceil(categories.length / columns);
+//     categories.forEach((category, i) => {
+//         const col = i % columns;
+//         const row = Math.floor(i / columns);
+//         categoryPositions[category] = {
+//             x: (width * (col + 1)) / (columns + 1),
+//             y: (height * (row + 1)) / (rows + 1)
+//         };
+//     });
+
+//     // Create SVG
+//     const svg = d3.select("#chart")
+//         .append("svg")
+//         .attr("width", width)
+//         .attr("height", height);
+
+//     // Add category regions
+//     svg.selectAll(".category-region")
+//         .data(categories)
+//         .enter()
+//         .append("circle")
+//         .attr("class", "category-region")
+//         .attr("cx", category => categoryPositions[category].x)
+//         .attr("cy", category => categoryPositions[category].y)
+//         .attr("r", 60)
+//         .style("fill", "none")
+//         .style("stroke", d => colorScale(d))
+//         .style("stroke-width", 2)
+//         .style("opacity", 0.3);
+
+//     // Add category labels
+//     svg.selectAll(".category-label")
+//         .data(categories)
+//         .enter()
+//         .append("text")
+//         .attr("class", "category-label")
+//         .attr("x", category => categoryPositions[category].x)
+//         .attr("y", category => categoryPositions[category].y - 80)
+//         .attr("text-anchor", "middle")
+//         .style("font-size", "14px")
+//         .style("font-weight", "bold")
+//         .text(d => d);
+
+//     // Create timer display
+//     const timerDisplay = d3.select("body")
+//         .insert("div", ":first-child")
+//         .attr("class", "timer")
+//         .style("position", "fixed")
+//         .style("top", "20px")
+//         .style("left", "20px")
+//         .style("font-size", "24px")
+//         .style("font-weight", "bold")
+//         .style("background-color", "rgba(255,255,255,0.8)")
+//         .style("padding", "10px")
+//         .style("border-radius", "5px")
+//         .style("box-shadow", "0 0 10px rgba(0,0,0,0.1)");
+
+//     // Create simulation with adjusted forces
+//     const simulation = d3.forceSimulation()
+//         .force("charge", d3.forceManyBody().strength(-10)) // Reduced repulsion
+//         .force("collide", d3.forceCollide().radius(12).strength(0.9)) // Increased collision strength
+//         .force("x", d3.forceX().strength(0.7)) // Increased x-force
+//         .force("y", d3.forceY().strength(0.7)); // Increased y-force
+
+//     // Create nodes for each employee
+//     const nodes = Array.from(employeeActivities.keys()).map(employeeId => ({
+//         id: employeeId,
+//         radius: 10, // Slightly reduced radius
+//         category: null
+//     }));
+
+//     // Create bubbles
+//     const bubbles = svg.selectAll(".bubble")
+//         .data(nodes)
+//         .enter()
+//         .append("circle")
+//         .attr("class", "bubble")
+//         .attr("r", d => d.radius)
+//         .style("fill-opacity", 0.8)
+//         .style("stroke", "#fff")
+//         .style("stroke-width", 0.5); // Reduced stroke width
+
+//     // Add tooltip
+//     const tooltip = d3.select("body").append("div")
+//         .attr("class", "tooltip")
+//         .style("opacity", 0);
+
+//     // Time animation
+//     const startTime = parseTime("08:00");
+//     const endTime = parseTime("23:55");
+//     let currentTime = startTime;
+
+//     function updatePositions(time) {
+//         nodes.forEach(node => {
+//             const activities = timelineData.get(node.id);
+//             const currentActivity = activities.find(a => 
+//                 time >= a.startTime && time <= a.endTime
+//             );
+            
+//             if (currentActivity) {
+//                 node.category = currentActivity.category;
+//                 node.targetX = categoryPositions[currentActivity.category].x;
+//                 node.targetY = categoryPositions[currentActivity.category].y;
+//             }
+//         });
+
+//         bubbles.style("fill", d => colorScale(d.category || "none"));
+
+//         simulation.force("x", d3.forceX(d => d.targetX))
+//             .force("y", d3.forceY(d => d.targetY));
+        
+//         simulation.alpha(0.3).restart();
+//     }
+
+//     // Update simulation
+//     simulation.nodes(nodes).on("tick", () => {
+//         bubbles
+//             .attr("cx", d => d.x)
+//             .attr("cy", d => d.y);
+//     });
+
+//     // Start animation - increment by 10 minutes
+//     const timeInterval = setInterval(() => {
+//         currentTime += 600;
+//         timerDisplay.text(formatTime(currentTime));
+//         updatePositions(currentTime);
+
+//         if (currentTime >= endTime) {
+//             clearInterval(timeInterval);
+//         }
+//     }, 1000);
+
+//     // Add legend for categories
+//     const legend = svg.append("g")
+//         .attr("class", "legend")
+//         .attr("transform", `translate(${width - 200}, 20)`);
+
+//     const legendItems = legend.selectAll(".legend-item")
+//         .data(categories)
+//         .enter()
+//         .append("g")
+//         .attr("class", "legend-item")
+//         .attr("transform", (d, i) => `translate(0, ${i * 20})`);
+
+//     legendItems.append("rect")
+//         .attr("width", 15)
+//         .attr("height", 15)
+//         .style("fill", d => colorScale(d));
+
+//     legendItems.append("text")
+//         .attr("x", 20)
+//         .attr("y", 12)
+//         .text(d => d)
+//         .style("font-size", "12px");
+
+//     // Add mouseover interactions
+//     bubbles.on("mouseover", (event, d) => {
+//         tooltip.transition()
+//             .duration(200)
+//             .style("opacity", 0.9);
+//         tooltip.html(`
+//             Employee: ${d.id}<br>
+//             Category: ${d.category || "None"}<br>
+//             Time: ${formatTime(currentTime)}
+//         `)
+//             .style("left", (event.pageX + 10) + "px")
+//             .style("top", (event.pageY - 28) + "px");
+//     })
+//     .on("mouseout", () => {
+//         tooltip.transition()
+//             .duration(500)
+//             .style("opacity", 0);
+//     });
+// });
+
+
+
+// // Configuration
+// const width = window.innerWidth;
+// const height = window.innerHeight;
+// const colorScale = d3.scaleOrdinal(d3.schemeSet3);
+
+// // Time parsing and formatting functions
+// const parseTime = timeStr => {
+//     const [hours, minutes] = timeStr.split(':').map(Number);
+//     return hours * 3600 + minutes * 60;
+// };
+
+// const formatTime = seconds => {
+//     const hours = Math.floor(seconds / 3600);
+//     const minutes = Math.floor((seconds % 3600) / 60);
+//     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+// };
+
+// // Load and process data
+// d3.csv("employee_activities.csv").then(data => {
+//     // Process employee activities
+//     const employeeActivities = d3.group(data, d => d.EmployeeID);
+    
+//     // Create timeline data structure
+//     const timelineData = new Map();
+//     employeeActivities.forEach((activities, employeeId) => {
+//         activities.forEach(activity => {
+//             const startSeconds = parseTime(activity.StartTime);
+//             const endSeconds = parseTime(activity.EndTime);
+            
+//             if (!timelineData.has(employeeId)) {
+//                 timelineData.set(employeeId, []);
+//             }
+            
+//             timelineData.get(employeeId).push({
+//                 startTime: startSeconds,
+//                 endTime: endSeconds,
+//                 category: activity.TaskCategory.trim(),
+//                 duration: +activity.Duration_Hours
+//             });
+//         });
+//     });
+
+//     // Get unique categories
+//     const categories = [...new Set(data.map(d => d.TaskCategory.trim()))];
+//     console.log("Categories:", categories);
+
+//     // Calculate circular layout positions
+//     const radius = Math.min(width, height) * 0.35;
+//     const categoryPositions = {};
+//     categories.forEach((category, i) => {
+//         const angle = (i * 2 * Math.PI) / categories.length;
+//         categoryPositions[category] = {
+//             x: width/2 + radius * Math.cos(angle),
+//             y: height/2 + radius * Math.sin(angle)
+//         };
+//     });
+
+//     // Create SVG
+//     const svg = d3.select("#chart")
+//         .append("svg")
+//         .attr("width", width)
+//         .attr("height", height)
+//         .style("background-color", "black");
+
+//     // Add category regions
+//     svg.selectAll(".category-region")
+//         .data(categories)
+//         .enter()
+//         .append("circle")
+//         .attr("class", "category-region")
+//         .attr("cx", category => categoryPositions[category].x)
+//         .attr("cy", category => categoryPositions[category].y)
+//         .attr("r", category => category === "Misc" ? 40 : 60)
+//         .style("fill", "none")
+//         .style("stroke", d => colorScale(d))
+//         .style("stroke-width", 2)
+//         .style("opacity", d => d === "Misc" ? 0.6 : 0.3);
+
+//     // Add category labels
+//     categories.forEach((category, i) => {
+//         const angle = (i * 2 * Math.PI) / categories.length;
+//         const labelRadius = radius + 40;
+//         const x = width/2 + labelRadius * Math.cos(angle);
+//         const y = height/2 + labelRadius * Math.sin(angle);
+        
+//         let rotationAngle = (angle * 180 / Math.PI) + 90;
+//         if (angle > Math.PI) {
+//             rotationAngle += 180;
+//         }
+
+//         svg.append("text")
+//             .attr("class", "category-label")
+//             .attr("x", x)
+//             .attr("y", y)
+//             .attr("text-anchor", "middle")
+//             .attr("transform", `rotate(${rotationAngle},${x},${y})`)
+//             .style("font-size", "14px")
+//             .style("font-weight", "bold")
+//             .style("fill", "white")
+//             .text(category);
+//     });
+
+//     // Create timer display
+//     const timerDisplay = d3.select("body")
+//         .insert("div", ":first-child")
+//         .attr("class", "timer")
+//         .style("position", "fixed")
+//         .style("top", "20px")
+//         .style("left", "20px")
+//         .style("font-size", "24px")
+//         .style("font-weight", "bold")
+//         .style("color", "white")
+//         .style("background-color", "rgba(0,0,0,0.8)")
+//         .style("padding", "10px")
+//         .style("border-radius", "5px")
+//         .style("border", "1px solid rgba(255,255,255,0.2)")
+//         .style("box-shadow", "0 0 10px rgba(0,0,0,0.5)");
+
+//     // Create simulation
+//     const simulation = d3.forceSimulation()
+//         .force("charge", d3.forceManyBody().strength(-15))
+//         .force("collide", d3.forceCollide().radius(12).strength(0.9))
+//         .force("x", d3.forceX().strength(0.7))
+//         .force("y", d3.forceY().strength(0.7));
+
+//     // Create nodes for each employee
+//     const nodes = Array.from(employeeActivities.keys()).map(employeeId => ({
+//         id: employeeId,
+//         radius: 10,
+//         category: null
+//     }));
+
+//     // Create bubbles
+//     const bubbles = svg.selectAll(".bubble")
+//         .data(nodes)
+//         .enter()
+//         .append("circle")
+//         .attr("class", "bubble")
+//         .attr("r", d => d.radius)
+//         .style("fill", "white")
+//         .style("fill-opacity", 0.6)
+//         .style("stroke", "#fff")
+//         .style("stroke-width", 0.5);
+
+//     // Create tooltip
+//     const tooltip = d3.select("body")
+//         .append("div")
+//         .attr("class", "tooltip")
+//         .style("opacity", 0)
+//         .style("position", "absolute")
+//         .style("background-color", "rgba(0,0,0,0.8)")
+//         .style("color", "white")
+//         .style("padding", "8px")
+//         .style("border-radius", "4px")
+//         .style("font-size", "12px")
+//         .style("pointer-events", "none");
+
+//     // Update positions function
+//     function updatePositions(time) {
+//         nodes.forEach(node => {
+//             const activities = timelineData.get(node.id);
+//             const currentActivity = activities.find(a => 
+//                 time >= a.startTime && time <= a.endTime
+//             );
+            
+//             if (currentActivity) {
+//                 node.category = currentActivity.category;
+//                 node.targetX = categoryPositions[currentActivity.category].x;
+//                 node.targetY = categoryPositions[currentActivity.category].y;
+//             }
+//         });
+
+//         bubbles
+//             .style("fill", d => colorScale(d.category || "none"))
+//             .style("fill-opacity", d => d.category === "Misc" ? 0.8 : 0.6);
+
+//         simulation
+//             .force("x", d3.forceX(d => d.targetX))
+//             .force("y", d3.forceY(d => d.targetY));
+        
+//         simulation.alpha(0.3).restart();
+//     }
+
+//     // Update simulation
+//     simulation.nodes(nodes).on("tick", () => {
+//         bubbles
+//             .attr("cx", d => d.x)
+//             .attr("cy", d => d.y);
+//     });
+
+//     // Add legend
+//     const legend = svg.append("g")
+//         .attr("class", "legend")
+//         .attr("transform", `translate(${width - 180}, 20)`);
+
+//     const legendItems = legend.selectAll(".legend-item")
+//         .data(categories)
+//         .enter()
+//         .append("g")
+//         .attr("class", "legend-item")
+//         .attr("transform", (d, i) => `translate(0, ${i * 25})`);
+
+//     legendItems.append("rect")
+//         .attr("width", 15)
+//         .attr("height", 15)
+//         .style("fill", d => colorScale(d));
+
+//     legendItems.append("text")
+//         .attr("x", 25)
+//         .attr("y", 12)
+//         .text(d => d)
+//         .style("font-size", "12px")
+//         .style("fill", "white");
+
+//     // Add interactions
+//     bubbles.on("mouseover", (event, d) => {
+//         tooltip.transition()
+//             .duration(200)
+//             .style("opacity", 0.9);
+//         tooltip.html(`
+//             Employee: ${d.id}<br>
+//             Category: ${d.category || "None"}<br>
+//             Time: ${formatTime(currentTime)}
+//         `)
+//             .style("left", (event.pageX + 10) + "px")
+//             .style("top", (event.pageY - 28) + "px");
+//     })
+//     .on("mouseout", () => {
+//         tooltip.transition()
+//             .duration(500)
+//             .style("opacity", 0);
+//     });
+
+//     // Start animation with 1-minute increments
+//     const startTime = parseTime("08:00");
+//     const endTime = parseTime("17:00");
+//     let currentTime = startTime;
+
+//     const timeInterval = setInterval(() => {
+//         currentTime += 60; // Changed from 600 to 60 for 1-minute increments
+//         timerDisplay.text(formatTime(currentTime));
+//         updatePositions(currentTime);
+
+//         if (currentTime >= endTime) {
+//             clearInterval(timeInterval);
+//         }
+//     }, 1000); // Updates every second in real-time
+// });
+
+
+
+
+
+
+
+// // Configuration
+// const width = 1200;
+// const height = 800;
+// const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+// // Time parsing and formatting functions
+// const parseTime = timeStr => {
+//     const [hours, minutes] = timeStr.split(':').map(Number);
+//     return hours * 3600 + minutes * 60;
+// };
+
+// const formatTime = seconds => {
+//     const hours = Math.floor(seconds / 3600);
+//     const minutes = Math.floor((seconds % 3600) / 60);
+//     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+// };
+
+// // Load and process data
+// d3.csv("employee_activities.csv").then(data => {
+//     // Process employee activities
+//     const employeeActivities = d3.group(data, d => d.EmployeeID);
+    
+//     // Create timeline data structure
+//     const timelineData = new Map();
+//     employeeActivities.forEach((activities, employeeId) => {
+//         activities.forEach(activity => {
+//             const startSeconds = parseTime(activity.StartTime);
+//             const endSeconds = parseTime(activity.EndTime);
+            
+//             if (!timelineData.has(employeeId)) {
+//                 timelineData.set(employeeId, []);
+//             }
+            
+//             timelineData.get(employeeId).push({
+//                 startTime: startSeconds,
+//                 endTime: endSeconds,
+//                 category: activity.TaskCategory,
+//                 duration: +activity.Duration_Hours
+//             });
+//         });
+//     });
+
+//     // Get unique categories
+//     const categories = [...new Set(data.map(d => d.TaskCategory))];
+
+//     // Create category positions (in a grid layout)
+//     const categoryPositions = {};
+//     const columns = Math.ceil(Math.sqrt(categories.length));
+//     const rows = Math.ceil(categories.length / columns);
+//     categories.forEach((category, i) => {
+//         const col = i % columns;
+//         const row = Math.floor(i / columns);
+//         categoryPositions[category] = {
+//             x: (width * (col + 1)) / (columns + 1),
+//             y: (height * (row + 1)) / (rows + 1)
+//         };
+//     });
+
+//     // Create SVG
+//     const svg = d3.select("#chart")
+//         .append("svg")
+//         .attr("width", width)
+//         .attr("height", height);
+
+//     // Add category regions
+//     svg.selectAll(".category-region")
+//         .data(categories)
+//         .enter()
+//         .append("circle")
+//         .attr("class", "category-region")
+//         .attr("cx", category => categoryPositions[category].x)
+//         .attr("cy", category => categoryPositions[category].y)
+//         .attr("r", 60)
+//         .style("fill", "none")
+//         .style("stroke", d => colorScale(d))
+//         .style("stroke-width", 2)
+//         .style("opacity", 0.3);
+
+//     // Add category labels
+//     svg.selectAll(".category-label")
+//         .data(categories)
+//         .enter()
+//         .append("text")
+//         .attr("class", "category-label")
+//         .attr("x", category => categoryPositions[category].x)
+//         .attr("y", category => categoryPositions[category].y - 80)
+//         .attr("text-anchor", "middle")
+//         .style("font-size", "14px")
+//         .style("font-weight", "bold")
+//         .text(d => d);
+
+//     // Create timer display
+//     const timerDisplay = d3.select("body")
+//         .insert("div", ":first-child")
+//         .attr("class", "timer")
+//         .style("position", "fixed")
+//         .style("top", "20px")
+//         .style("left", "20px")
+//         .style("font-size", "24px")
+//         .style("font-weight", "bold")
+//         .style("background-color", "rgba(255,255,255,0.8)")
+//         .style("padding", "10px")
+//         .style("border-radius", "5px")
+//         .style("box-shadow", "0 0 10px rgba(0,0,0,0.1)");
+
+//     // Create simulation with adjusted forces
+//     const simulation = d3.forceSimulation()
+//         .force("charge", d3.forceManyBody().strength(-10)) // Reduced repulsion
+//         .force("collide", d3.forceCollide().radius(12).strength(0.9)) // Increased collision strength
+//         .force("x", d3.forceX().strength(0.7)) // Increased x-force
+//         .force("y", d3.forceY().strength(0.7)); // Increased y-force
+
+//     // Create nodes for each employee
+//     const nodes = Array.from(employeeActivities.keys()).map(employeeId => ({
+//         id: employeeId,
+//         radius: 10, // Slightly reduced radius
+//         category: null
+//     }));
+
+//     // Create bubbles
+//     const bubbles = svg.selectAll(".bubble")
+//         .data(nodes)
+//         .enter()
+//         .append("circle")
+//         .attr("class", "bubble")
+//         .attr("r", d => d.radius)
+//         .style("fill-opacity", 0.8)
+//         .style("stroke", "#fff")
+//         .style("stroke-width", 0.5); // Reduced stroke width
+
+//     // Add tooltip
+//     const tooltip = d3.select("body").append("div")
+//         .attr("class", "tooltip")
+//         .style("opacity", 0);
+
+//     // Time animation
+//     const startTime = parseTime("08:00");
+//     const endTime = parseTime("23:55");
+//     let currentTime = startTime;
+
+//     function updatePositions(time) {
+//         nodes.forEach(node => {
+//             const activities = timelineData.get(node.id);
+//             const currentActivity = activities.find(a => 
+//                 time >= a.startTime && time <= a.endTime
+//             );
+            
+//             if (currentActivity) {
+//                 node.category = currentActivity.category;
+//                 node.targetX = categoryPositions[currentActivity.category].x;
+//                 node.targetY = categoryPositions[currentActivity.category].y;
+//             }
+//         });
+
+//         bubbles.style("fill", d => colorScale(d.category || "none"));
+
+//         simulation.force("x", d3.forceX(d => d.targetX))
+//             .force("y", d3.forceY(d => d.targetY));
+        
+//         simulation.alpha(0.3).restart();
+//     }
+
+//     // Update simulation
+//     simulation.nodes(nodes).on("tick", () => {
+//         bubbles
+//             .attr("cx", d => d.x)
+//             .attr("cy", d => d.y);
+//     });
+
+//     // Start animation - increment by 10 minutes
+//     const timeInterval = setInterval(() => {
+//         currentTime += 600;
+//         timerDisplay.text(formatTime(currentTime));
+//         updatePositions(currentTime);
+
+//         if (currentTime >= endTime) {
+//             clearInterval(timeInterval);
+//         }
+//     }, 1000);
+
+//     // Add legend for categories
+//     const legend = svg.append("g")
+//         .attr("class", "legend")
+//         .attr("transform", `translate(${width - 200}, 20)`);
+
+//     const legendItems = legend.selectAll(".legend-item")
+//         .data(categories)
+//         .enter()
+//         .append("g")
+//         .attr("class", "legend-item")
+//         .attr("transform", (d, i) => `translate(0, ${i * 20})`);
+
+//     legendItems.append("rect")
+//         .attr("width", 15)
+//         .attr("height", 15)
+//         .style("fill", d => colorScale(d));
+
+//     legendItems.append("text")
+//         .attr("x", 20)
+//         .attr("y", 12)
+//         .text(d => d)
+//         .style("font-size", "12px");
+
+//     // Add mouseover interactions
+//     bubbles.on("mouseover", (event, d) => {
+//         tooltip.transition()
+//             .duration(200)
+//             .style("opacity", 0.9);
+//         tooltip.html(`
+//             Employee: ${d.id}<br>
+//             Category: ${d.category || "None"}<br>
+//             Time: ${formatTime(currentTime)}
+//         `)
+//             .style("left", (event.pageX + 10) + "px")
+//             .style("top", (event.pageY - 28) + "px");
+//     })
+//     .on("mouseout", () => {
+//         tooltip.transition()
+//             .duration(500)
+//             .style("opacity", 0);
+//     });
+// });
+
+
+
+
+
+
+
+// // Configuration
+// const width = 1200;
+// const height = 800;
+// const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+// // Time parsing and formatting functions
+// const parseTime = timeStr => {
+//     const [hours, minutes] = timeStr.split(':').map(Number);
+//     return hours * 3600 + minutes * 60;
+// };
+
+// const formatTime = seconds => {
+//     const hours = Math.floor(seconds / 3600);
+//     const minutes = Math.floor((seconds % 3600) / 60);
+//     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+// };
+
+// // Load and process data
+// d3.csv("employee_activities.csv").then(data => {
+//     // Process employee activities
+//     const employeeActivities = d3.group(data, d => d.EmployeeID);
+    
+//     // Create timeline data structure
+//     const timelineData = new Map();
+//     employeeActivities.forEach((activities, employeeId) => {
+//         activities.forEach(activity => {
+//             const startSeconds = parseTime(activity.StartTime);
+//             const endSeconds = parseTime(activity.EndTime);
+            
+//             if (!timelineData.has(employeeId)) {
+//                 timelineData.set(employeeId, []);
+//             }
+            
+//             timelineData.get(employeeId).push({
+//                 startTime: startSeconds,
+//                 endTime: endSeconds,
+//                 category: activity.TaskCategory,
+//                 duration: +activity.Duration_Hours
+//             });
+//         });
+//     });
+
+//     // Get unique categories
+//     let categories = [...new Set(data.map(d => d.TaskCategory))];
+    
+//     // Remove 'Misc' from categories array if it exists and add it separately
+//     categories = categories.filter(cat => cat !== 'Misc');
+//     const centerCategory = 'Misc';
+
+//     // Create category positions in a circle
+//     const categoryPositions = {};
+//     const radius = Math.min(width, height) * 0.35; // Radius for the circle
+//     const angleStep = (2 * Math.PI) / categories.length;
+    
+//     // Position categories in a circle
+//     categories.forEach((category, i) => {
+//         const angle = i * angleStep - Math.PI / 2; // Start from top (-90 degrees)
+//         categoryPositions[category] = {
+//             x: width / 2 + radius * Math.cos(angle),
+//             y: height / 2 + radius * Math.sin(angle)
+//         };
+//     });
+    
+//     // Add center position for 'Misc'
+//     categoryPositions[centerCategory] = {
+//         x: width / 2,
+//         y: height / 2
+//     };
+
+//     // Create SVG
+//     const svg = d3.select("#chart")
+//         .append("svg")
+//         .attr("width", width)
+//         .attr("height", height);
+
+//     // Add category regions
+//     svg.selectAll(".category-region")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("circle")
+//         .attr("class", "category-region")
+//         .attr("cx", category => categoryPositions[category].x)
+//         .attr("cy", category => categoryPositions[category].y)
+//         .attr("r", 60)
+//         .style("fill", "none")
+//         .style("stroke", d => colorScale(d))
+//         .style("stroke-width", 2)
+//         .style("opacity", 0.3);
+
+//     // Add category labels
+//     svg.selectAll(".category-label")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("text")
+//         .attr("class", "category-label")
+//         .attr("x", category => categoryPositions[category].x)
+//         .attr("y", category => categoryPositions[category].y - 80)
+//         .attr("text-anchor", "middle")
+//         .style("font-size", "14px")
+//         .style("font-weight", "bold")
+//         .text(d => d);
+
+//     // Rest of your code remains the same...
+//     // Create timer display
+//     const timerDisplay = d3.select("body")
+//         .insert("div", ":first-child")
+//         .attr("class", "timer")
+//         .style("position", "fixed")
+//         .style("top", "20px")
+//         .style("left", "20px")
+//         .style("font-size", "24px")
+//         .style("font-weight", "bold")
+//         .style("background-color", "rgba(255,255,255,0.8)")
+//         .style("padding", "10px")
+//         .style("border-radius", "5px")
+//         .style("box-shadow", "0 0 10px rgba(0,0,0,0.1)");
+
+//     // Create simulation with adjusted forces
+//     const simulation = d3.forceSimulation()
+//         .force("charge", d3.forceManyBody().strength(-10))
+//         .force("collide", d3.forceCollide().radius(12).strength(0.9))
+//         .force("x", d3.forceX().strength(0.7))
+//         .force("y", d3.forceY().strength(0.7));
+
+//     // Create nodes for each employee
+//     const nodes = Array.from(employeeActivities.keys()).map(employeeId => ({
+//         id: employeeId,
+//         radius: 10,
+//         category: null
+//     }));
+
+//     // Create bubbles
+//     const bubbles = svg.selectAll(".bubble")
+//         .data(nodes)
+//         .enter()
+//         .append("circle")
+//         .attr("class", "bubble")
+//         .attr("r", d => d.radius)
+//         .style("fill-opacity", 0.8)
+//         .style("stroke", "#fff")
+//         .style("stroke-width", 0.5);
+
+//     // Add tooltip
+//     const tooltip = d3.select("body").append("div")
+//         .attr("class", "tooltip")
+//         .style("opacity", 0);
+
+//     // Time animation
+//     const startTime = parseTime("08:00");
+//     const endTime = parseTime("23:55");
+//     let currentTime = startTime;
+
+//     function updatePositions(time) {
+//         nodes.forEach(node => {
+//             const activities = timelineData.get(node.id);
+//             const currentActivity = activities.find(a => 
+//                 time >= a.startTime && time <= a.endTime
+//             );
+            
+//             if (currentActivity) {
+//                 node.category = currentActivity.category;
+//                 node.targetX = categoryPositions[currentActivity.category].x;
+//                 node.targetY = categoryPositions[currentActivity.category].y;
+//             }
+//         });
+
+//         bubbles.style("fill", d => colorScale(d.category || "none"));
+
+//         simulation.force("x", d3.forceX(d => d.targetX))
+//             .force("y", d3.forceY(d => d.targetY));
+        
+//         simulation.alpha(0.3).restart();
+//     }
+
+//     // Update simulation
+//     simulation.nodes(nodes).on("tick", () => {
+//         bubbles
+//             .attr("cx", d => d.x)
+//             .attr("cy", d => d.y);
+//     });
+
+//     // Start animation
+//     const timeInterval = setInterval(() => {
+//         currentTime += 600;
+//         timerDisplay.text(formatTime(currentTime));
+//         updatePositions(currentTime);
+
+//         if (currentTime >= endTime) {
+//             clearInterval(timeInterval);
+//         }
+//     }, 1000);
+
+//     // Add legend
+//     const legend = svg.append("g")
+//         .attr("class", "legend")
+//         .attr("transform", `translate(${width - 200}, 20)`);
+
+//     const legendItems = legend.selectAll(".legend-item")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("g")
+//         .attr("class", "legend-item")
+//         .attr("transform", (d, i) => `translate(0, ${i * 20})`);
+
+//     legendItems.append("rect")
+//         .attr("width", 15)
+//         .attr("height", 15)
+//         .style("fill", d => colorScale(d));
+
+//     legendItems.append("text")
+//         .attr("x", 20)
+//         .attr("y", 12)
+//         .text(d => d)
+//         .style("font-size", "12px");
+
+//     // Add mouseover interactions
+//     bubbles.on("mouseover", (event, d) => {
+//         tooltip.transition()
+//             .duration(200)
+//             .style("opacity", 0.9);
+//         tooltip.html(`
+//             Employee: ${d.id}<br>
+//             Category: ${d.category || "None"}<br>
+//             Time: ${formatTime(currentTime)}
+//         `)
+//             .style("left", (event.pageX + 10) + "px")
+//             .style("top", (event.pageY - 28) + "px");
+//     })
+//     .on("mouseout", () => {
+//         tooltip.transition()
+//             .duration(500)
+//             .style("opacity", 0);
+//     });
+// });
+
+
+
+
+
 // Configuration
 const width = 1200;
 const height = 800;
 const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
+// Time parsing and formatting functions
+const parseTime = timeStr => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 3600 + minutes * 60;
+};
+
+const formatTime = seconds => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+};
+
 // Load and process data
 d3.csv("employee_activities.csv").then(data => {
-    // Process data - group by employee and calculate total hours
-    const employees = d3.rollup(data,
-        v => ({
-            totalHours: d3.sum(v, d => +d.Duration_Hours),
-            tasks: v,
-            shiftStart: d3.min(v, d => d.ShiftStart),
-            shiftEnd: d3.min(v, d => d.ShiftEnd)
-        }),
-        d => d.EmployeeID
-    );
+    // Process employee activities
+    const employeeActivities = d3.group(data, d => d.EmployeeID);
+    
+    // Create timeline data structure
+    const timelineData = new Map();
+    employeeActivities.forEach((activities, employeeId) => {
+        activities.forEach(activity => {
+            const startSeconds = parseTime(activity.StartTime);
+            const endSeconds = parseTime(activity.EndTime);
+            
+            if (!timelineData.has(employeeId)) {
+                timelineData.set(employeeId, []);
+            }
+            
+            timelineData.get(employeeId).push({
+                startTime: startSeconds,
+                endTime: endSeconds,
+                category: activity.TaskCategory,
+                duration: +activity.Duration_Hours
+            });
+        });
+    });
 
-    const nodes = Array.from(employees, ([id, details]) => ({
-        id,
-        ...details,
-        radius: Math.sqrt(details.totalHours) * 4,
-        category: d3.max(details.tasks, d => d.TaskCategory)
-    }));
+    // Get unique categories
+    let categories = [...new Set(data.map(d => d.TaskCategory))];
+    
+    // Remove 'Misc' from categories array if it exists and add it separately
+    categories = categories.filter(cat => cat !== 'Misc');
+    const centerCategory = 'Misc';
 
-    // Create simulation
-    const simulation = d3.forceSimulation(nodes)
-        .force("charge", d3.forceManyBody().strength(5))
-        .force("collide", d3.forceCollide().radius(d => d.radius + 2))
-        .force("center", d3.forceCenter(width / 2, height / 2))
-        .force("x", d3.forceX(width / 2).strength(0.05))
-        .force("y", d3.forceY(height / 2).strength(0.05));
+    // Create category positions in a circle
+    const categoryPositions = {};
+    const radius = Math.min(width, height) * 0.35; // Radius for the circle
+    const angleStep = (2 * Math.PI) / categories.length;
+    
+    // Position categories in a circle
+    categories.forEach((category, i) => {
+        const angle = i * angleStep - Math.PI / 2; // Start from top (-90 degrees)
+        categoryPositions[category] = {
+            x: width / 2 + radius * Math.cos(angle),
+            y: height / 2 + radius * Math.sin(angle)
+        };
+    });
+    
+    // Add center position for 'Misc'
+    categoryPositions[centerCategory] = {
+        x: width / 2,
+        y: height / 2
+    };
 
     // Create SVG
     const svg = d3.select("#chart")
@@ -37,63 +1123,158 @@ d3.csv("employee_activities.csv").then(data => {
         .attr("width", width)
         .attr("height", height);
 
+    // Add category regions
+    svg.selectAll(".category-region")
+        .data([...categories, centerCategory])
+        .enter()
+        .append("circle")
+        .attr("class", "category-region")
+        .attr("cx", category => categoryPositions[category].x)
+        .attr("cy", category => categoryPositions[category].y)
+        .attr("r", 60)
+        .style("fill", "none")
+        .style("stroke", d => colorScale(d))
+        .style("stroke-width", 2)
+        .style("opacity", 0.3);
+
+    // Add category labels
+    svg.selectAll(".category-label")
+        .data([...categories, centerCategory])
+        .enter()
+        .append("text")
+        .attr("class", "category-label")
+        .attr("x", category => categoryPositions[category].x)
+        .attr("y", category => categoryPositions[category].y - 80)
+        .attr("text-anchor", "middle")
+        .style("font-size", "14px")
+        .style("font-weight", "bold")
+        .text(d => d);
+
+    // Create timer display
+    const timerDisplay = d3.select("body")
+        .insert("div", ":first-child")
+        .attr("class", "timer");
+
+    // Create simulation with adjusted forces
+    const simulation = d3.forceSimulation()
+        .force("charge", d3.forceManyBody().strength(-10))
+        .force("collide", d3.forceCollide().radius(12).strength(0.9))
+        .force("x", d3.forceX().strength(0.7))
+        .force("y", d3.forceY().strength(0.7));
+
+    // Create nodes for each employee
+    const nodes = Array.from(employeeActivities.keys()).map(employeeId => ({
+        id: employeeId,
+        radius: 10,
+        category: null
+    }));
+
     // Create bubbles
-    const bubbles = svg.selectAll("circle")
+    const bubbles = svg.selectAll(".bubble")
         .data(nodes)
-        .enter().append("circle")
+        .enter()
+        .append("circle")
         .attr("class", "bubble")
         .attr("r", d => d.radius)
-        .style("fill", d => colorScale(d.category));
+        .style("fill-opacity", 0.8)
+        .style("stroke", "#fff")
+        .style("stroke-width", 0.5);
 
     // Add tooltip
     const tooltip = d3.select("body").append("div")
         .attr("class", "tooltip")
         .style("opacity", 0);
 
-    // Add interaction
-    bubbles.on("mouseover", (event, d) => {
-            tooltip.transition()
-                .style("opacity", 0.9);
-            tooltip.html(`Employee: ${d.id}<br>
-                        Total Hours: ${d.totalHours.toFixed(2)}<br>
-                        Shift: ${d.shiftStart} - ${d.shiftEnd}<br>
-                        Main Task: ${d.category}`)
-                .style("left", (event.pageX + 10) + "px")
-                .style("top", (event.pageY - 28) + "px");
-        })
-        .on("mouseout", () => {
-            tooltip.transition().style("opacity", 0);
+    // Time animation
+    const startTime = parseTime("08:00");
+    const endTime = parseTime("23:55");
+    let currentTime = startTime;
+
+    function updatePositions(time) {
+        nodes.forEach(node => {
+            const activities = timelineData.get(node.id);
+            const currentActivity = activities.find(a => 
+                time >= a.startTime && time <= a.endTime
+            );
+            
+            if (currentActivity) {
+                node.category = currentActivity.category;
+                node.targetX = categoryPositions[currentActivity.category].x;
+                node.targetY = categoryPositions[currentActivity.category].y;
+            }
         });
 
-    // Update positions
-    simulation.on("tick", () => {
+        bubbles.style("fill", d => colorScale(d.category || "none"));
+
+        simulation.force("x", d3.forceX(d => d.targetX))
+            .force("y", d3.forceY(d => d.targetY));
+        
+        simulation.alpha(0.3).restart();
+    }
+
+    // Update simulation
+    simulation.nodes(nodes).on("tick", () => {
         bubbles
             .attr("cx", d => d.x)
             .attr("cy", d => d.y);
     });
 
-    // Add periodic movement
-    setInterval(() => {
-        simulation.force("x", d3.forceX(Math.random() * width).strength(0.05));
-        simulation.force("y", d3.forceY(Math.random() * height).strength(0.05));
-        simulation.alpha(0.3).restart();
-    }, 3000);
+    // Start animation - increment by 1 minute every second
+    const timeInterval = setInterval(() => {
+        currentTime += 60; // 1 minute increment
+
+        // Log to verify the increment (you can remove this after testing)
+        console.log('Current time:', formatTime(currentTime));
+
+
+        timerDisplay.text(formatTime(currentTime));
+        updatePositions(currentTime);
+
+        if (currentTime >= endTime) {
+            clearInterval(timeInterval);
+            console.log('Animation complete');
+        }
+    }, 1000); // Update every second
 
     // Add legend
-    const legend = svg.selectAll(".legend")
-        .data(colorScale.domain())
-        .enter().append("g")
+    const legend = svg.append("g")
         .attr("class", "legend")
-        .attr("transform", (d, i) => `translate(20,${20 + i * 20})`);
+        .attr("transform", `translate(${width - 200}, 20)`);
 
-    legend.append("rect")
-        .attr("width", 18)
-        .attr("height", 18)
-        .style("fill", colorScale);
+    const legendItems = legend.selectAll(".legend-item")
+        .data([...categories, centerCategory])
+        .enter()
+        .append("g")
+        .attr("class", "legend-item")
+        .attr("transform", (d, i) => `translate(0, ${i * 20})`);
 
-    legend.append("text")
-        .attr("x", 24)
-        .attr("y", 9)
-        .attr("dy", ".35em")
-        .text(d => d);
+    legendItems.append("rect")
+        .attr("width", 15)
+        .attr("height", 15)
+        .style("fill", d => colorScale(d));
+
+    legendItems.append("text")
+        .attr("x", 20)
+        .attr("y", 12)
+        .text(d => d)
+        .style("font-size", "12px");
+
+    // Add mouseover interactions
+    bubbles.on("mouseover", (event, d) => {
+        tooltip.transition()
+            .duration(200)
+            .style("opacity", 0.9);
+        tooltip.html(`
+            Employee: ${d.id}<br>
+            Category: ${d.category || "None"}<br>
+            Time: ${formatTime(currentTime)}
+        `)
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 28) + "px");
+    })
+    .on("mouseout", () => {
+        tooltip.transition()
+            .duration(500)
+            .style("opacity", 0);
+    });
 });

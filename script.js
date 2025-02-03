@@ -2708,12 +2708,1966 @@
 
 
 
+// // Configuration
+// const width = 1200;
+// const height = 800;
+// const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+// // Time parsing and formatting functions remain the same
+// const parseTime = timeStr => {
+//     const [hours, minutes] = timeStr.split(':').map(Number);
+//     return hours * 3600 + minutes * 60;
+// };
+
+// const formatTime = seconds => {
+//     const hours = Math.floor(seconds / 3600);
+//     const minutes = Math.floor((seconds % 3600) / 60);
+//     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+// };
+
+// // Load and process data
+// d3.csv("employee_activities.csv").then(data => {
+//     // Process employee activities
+//     const employeeActivities = d3.group(data, d => d.EmployeeID);
+    
+//     // Create timeline data structure
+//     const timelineData = new Map();
+//     employeeActivities.forEach((activities, employeeId) => {
+//         activities.forEach(activity => {
+//             const startSeconds = parseTime(activity.StartTime);
+//             const endSeconds = parseTime(activity.EndTime);
+            
+//             if (!timelineData.has(employeeId)) {
+//                 timelineData.set(employeeId, []);
+//             }
+            
+//             timelineData.get(employeeId).push({
+//                 startTime: startSeconds,
+//                 endTime: endSeconds,
+//                 category: activity.TaskCategory,
+//                 duration: +activity.Duration_Hours
+//             });
+//         });
+//     });
+
+//     // Get unique categories
+//     let categories = [...new Set(data.map(d => d.TaskCategory))];
+//     categories = categories.filter(cat => cat !== 'Misc');
+//     const centerCategory = 'Misc';
+
+//     // Create category positions with MUCH larger spacing
+//     const categoryPositions = {};
+//     const radius = Math.min(width, height) * 0.3; // Decreased to bring categories closer to center
+//     const angleStep = (2 * Math.PI) / categories.length;
+    
+//     categories.forEach((category, i) => {
+//         const angle = i * angleStep - Math.PI / 2;
+//         categoryPositions[category] = {
+//             x: width / 2 + radius * Math.cos(angle),
+//             y: height / 2 + radius * Math.sin(angle)
+//         };
+//     });
+    
+//     categoryPositions[centerCategory] = {
+//         x: width / 2,
+//         y: height / 2
+//     };
+
+//     // Create time control container
+//     const timeControl = d3.select("body")
+//         .insert("div", ":first-child")
+//         .attr("class", "time-control")
+//         .style("margin", "20px")
+//         .style("display", "flex")
+//         .style("align-items", "center")
+//         .style("gap", "10px");
+
+//     // Time control elements (timer, play button, slider, speed control)
+//     const timerDisplay = timeControl
+//         .append("div")
+//         .attr("class", "timer")
+//         .style("font-size", "18px")
+//         .style("font-weight", "bold");
+
+//     const playButton = timeControl
+//         .append("button")
+//         .text("Play/Pause")
+//         .style("padding", "5px 10px");
+
+//     const sliderContainer = timeControl
+//         .append("div")
+//         .style("flex-grow", "1")
+//         .style("margin", "0 20px");
+
+//     const startTime = parseTime("11:00");
+//     const endTime = parseTime("23:55");
+
+//     const timeSlider = sliderContainer
+//         .append("input")
+//         .attr("type", "range")
+//         .attr("min", startTime)
+//         .attr("max", endTime)
+//         .attr("step", 300)
+//         .attr("value", startTime)
+//         .style("width", "100%");
+
+//     const speedControl = timeControl
+//         .append("select")
+//         .style("padding", "5px");
+
+//     const speedOptions = [
+//         { label: "0.5x", value: 2000 },
+//         { label: "1x", value: 1000 },
+//         { label: "2x", value: 500, default: true },
+//         { label: "5x", value: 200 }
+//     ];
+
+//     speedControl
+//         .selectAll("option")
+//         .data(speedOptions)
+//         .enter()
+//         .append("option")
+//         .attr("value", d => d.value)
+//         .attr("selected", d => d.default ? "" : null)
+//         .text(d => d.label);
+
+//     // Create SVG
+//     const svg = d3.select("#chart")
+//         .append("svg")
+//         .attr("width", width)
+//         .attr("height", height);
+
+//     // Add much smaller category regions
+//     const regionRadius = 80; // Decreased region radius
+    
+//     svg.selectAll(".category-region")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("circle")
+//         .attr("class", "category-region")
+//         .attr("cx", category => categoryPositions[category].x)
+//         .attr("cy", category => categoryPositions[category].y)
+//         .attr("r", regionRadius)
+//         .style("fill", "none")
+//         .style("stroke", d => colorScale(d))
+//         .style("stroke-width", 2)
+//         .style("opacity", 0.0);
+
+//     // Add category labels with adjusted positioning
+//     const categoryGroups = svg.selectAll(".category-group")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("g")
+//         .attr("class", "category-group")
+//         .attr("transform", category => 
+//             `translate(${categoryPositions[category].x},${categoryPositions[category].y - regionRadius - 30})`);
+
+//     categoryGroups.append("text")
+//         .attr("class", "category-label")
+//         .attr("text-anchor", "middle")
+//         .attr("y", -10)
+//         .style("font-size", "14px")
+//         .style("font-weight", "bold")
+//         .text(d => d);
+
+//     categoryGroups.append("text")
+//         .attr("class", "category-percentage")
+//         .attr("text-anchor", "middle")
+//         .attr("y", 10)
+//         .style("font-size", "12px")
+//         .text("0%");
+
+//     // Create simulation with adjusted forces
+//     const simulation = d3.forceSimulation()
+//         .force("charge", d3.forceManyBody().strength(-30)) // Increased repulsion
+//         .force("collide", d3.forceCollide().radius(10).strength(1))
+//         .force("x", d3.forceX().strength(0.95)) // Significantly increased x-force
+//         .force("y", d3.forceY().strength(0.95)) // Significantly increased y-force
+//         .velocityDecay(0.3); // Reduced from default 0.4 to maintain momentum
+
+//     // Create nodes
+//     const nodes = Array.from(employeeActivities.keys()).map(employeeId => ({
+//         id: employeeId,
+//         radius: 5,
+//         category: null
+//     }));
+
+//     // Create bubbles
+//     const bubbles = svg.selectAll(".bubble")
+//         .data(nodes)
+//         .enter()
+//         .append("circle")
+//         .attr("class", "bubble")
+//         .attr("r", d => d.radius)
+//         .style("fill-opacity", 0.8)
+//         .style("stroke", "#fff")
+//         .style("stroke-width", 0.5);
+
+//     // Add legend
+//     const legend = svg.append("g")
+//         .attr("class", "legend")
+//         .attr("transform", `translate(${width - 250}, 20)`);
+
+//     const legendItems = legend.selectAll(".legend-item")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("g")
+//         .attr("class", "legend-item")
+//         .attr("transform", (d, i) => `translate(0, ${i * 20})`);
+
+//     legendItems.append("text")
+//         .attr("class", "legend-percentage")
+//         .attr("x", 0)
+//         .attr("y", 12)
+//         .style("font-size", "12px")
+//         .style("font-weight", "bold")
+//         .style("text-anchor", "end")
+//         .attr("dx", "30")
+//         .text("0%");
+
+//     legendItems.append("rect")
+//         .attr("x", 40)
+//         .attr("width", 15)
+//         .attr("height", 15)
+//         .style("fill", d => colorScale(d));
+
+//     legendItems.append("text")
+//         .attr("class", "legend-label")
+//         .attr("x", 65)
+//         .attr("y", 12)
+//         .style("font-size", "12px")
+//         .text(d => d);
+
+//     // Add tooltip
+//     const tooltip = d3.select("body").append("div")
+//         .attr("class", "tooltip")
+//         .style("opacity", 0)
+//         .style("position", "absolute")
+//         .style("background-color", "white")
+//         .style("padding", "5px")
+//         .style("border", "1px solid #ddd")
+//         .style("border-radius", "3px");
+
+//     let currentTime = startTime;
+//     let isPlaying = false;
+//     let timeInterval;
+
+//     function updateCategoryPercentages() {
+//         const categoryCounts = {};
+//         let activeNodes = 0;
+        
+//         [...categories, centerCategory].forEach(cat => {
+//             categoryCounts[cat] = 0;
+//         });
+        
+//         nodes.forEach(node => {
+//             if (node.category) {
+//                 categoryCounts[node.category]++;
+//                 activeNodes++;
+//             }
+//         });
+        
+//         svg.selectAll(".category-percentage, .legend-percentage")
+//             .text(d => {
+//                 const percentage = activeNodes > 0 ? 
+//                     (categoryCounts[d] / activeNodes * 100).toFixed(1) : 
+//                     '0.0';
+//                 return `${percentage}%`;
+//             });
+//     }
+
+//     function updatePositions(time) {
+//         nodes.forEach(node => {
+//             const activities = timelineData.get(node.id);
+//             const currentActivity = activities.find(a => 
+//                 time >= a.startTime && time <= a.endTime
+//             );
+            
+//             if (currentActivity) {
+//                 node.category = currentActivity.category;
+//                 // Add immediate position update for faster initial movement
+//                 node.vx = (categoryPositions[currentActivity.category].x - node.x) * 0.2;
+//                 node.vy = (categoryPositions[currentActivity.category].y - node.y) * 0.2;
+//                 node.targetX = categoryPositions[currentActivity.category].x;
+//                 node.targetY = categoryPositions[currentActivity.category].y;
+//             }
+//         });
+    
+//         bubbles.style("fill", d => colorScale(d.category || "none"));
+    
+//         // Increase alpha (simulation heat) for more energetic movement
+//         simulation
+//             .force("x", d3.forceX(d => d.targetX).strength(0.95))
+//             .force("y", d3.forceY(d => d.targetY).strength(0.95))
+//             .alpha(0.8) // Increased from 0.3
+//             .restart();
+        
+//         updateCategoryPercentages();
+//     }
+
+//     simulation.nodes(nodes).on("tick", () => {
+//         bubbles
+//             .attr("cx", d => d.x)
+//             .attr("cy", d => d.y);
+//     });
+
+//     function togglePlayPause() {
+//         isPlaying = !isPlaying;
+//         if (isPlaying) {
+//             startAnimation();
+//         } else {
+//             clearInterval(timeInterval);
+//         }
+//     }
+    
+//     function startAnimation() {
+//         clearInterval(timeInterval);
+//         const speed = +speedControl.node().value;
+        
+//         function animate() {
+//             currentTime += 600;  // 10 minute increment
+//             if (currentTime >= endTime) {
+//                 currentTime = startTime;
+//             }
+            
+//             timeSlider.node().value = currentTime;
+//             timerDisplay.text(formatTime(currentTime));
+//             updatePositions(currentTime);
+    
+//             // Add 4-second delay between updates
+//             setTimeout(() => {
+//                 if (isPlaying) {
+//                     requestAnimationFrame(animate);
+//                 }
+//             }, 4000); // 4000ms = 4 seconds delay
+//         }
+        
+//         if (isPlaying) {
+//             animate();
+//         }
+//     }
+    
+//     // Modified time slider event handler to maintain consistency
+//     timeSlider.on("input", function() {
+//         currentTime = +this.value;
+//         timerDisplay.text(formatTime(currentTime));
+        
+//         // Add small delay before position update for smooth transition
+//         setTimeout(() => {
+//             updatePositions(currentTime);
+//         }, 100);
+//     });
+
+//     // Event listeners
+//     playButton.on("click", togglePlayPause);
+    
+//     timeSlider.on("input", function() {
+//         currentTime = +this.value;
+//         timerDisplay.text(formatTime(currentTime));
+//         updatePositions(currentTime);
+//     });
+
+//     speedControl.on("change", function() {
+//         if (isPlaying) {
+//             startAnimation();
+//         }
+//     });
+
+//     bubbles.on("mouseover", (event, d) => {
+//         tooltip.transition()
+//             .duration(200)
+//             .style("opacity", 0.9);
+//         tooltip.html(`
+//             Employee: ${d.id}<br>
+//             Category: ${d.category || "None"}<br>
+//             Time: ${formatTime(currentTime)}
+//         `)
+//             .style("left", (event.pageX + 10) + "px")
+//             .style("top", (event.pageY - 28) + "px");
+//     })
+//     .on("mouseout", () => {
+//         tooltip.transition()
+//             .duration(500)
+//             .style("opacity", 0);
+//     });
+
+//     // Initialize display
+//     timerDisplay.text(formatTime(currentTime));
+//     updatePositions(currentTime);
+// });
+
+
+
+
+
+// // Configuration
+// const width = 1200;
+// const height = 800;
+// const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+// // Time parsing and formatting functions
+// const parseTime = timeStr => {
+//     const [hours, minutes] = timeStr.split(':').map(Number);
+//     return hours * 3600 + minutes * 60;
+// };
+
+// const formatTime = seconds => {
+//     const hours = Math.floor(seconds / 3600);
+//     const minutes = Math.floor((seconds % 3600) / 60);
+//     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+// };
+
+// // Load and process data
+// d3.csv("employee_activities.csv").then(data => {
+//     // Process employee activities
+//     const employeeActivities = d3.group(data, d => d.EmployeeID);
+    
+//     // Create timeline data structure
+//     const timelineData = new Map();
+//     employeeActivities.forEach((activities, employeeId) => {
+//         activities.forEach(activity => {
+//             const startSeconds = parseTime(activity.StartTime);
+//             const endSeconds = parseTime(activity.EndTime);
+            
+//             if (!timelineData.has(employeeId)) {
+//                 timelineData.set(employeeId, []);
+//             }
+            
+//             timelineData.get(employeeId).push({
+//                 startTime: startSeconds,
+//                 endTime: endSeconds,
+//                 category: activity.TaskCategory,
+//                 duration: +activity.Duration_Hours
+//             });
+//         });
+//     });
+
+//     // Get unique categories
+//     let categories = [...new Set(data.map(d => d.TaskCategory))];
+//     categories = categories.filter(cat => cat !== 'Misc');
+//     const centerCategory = 'Misc';
+
+//     // Create category positions with increased spacing
+//     const categoryPositions = {};
+//     const radius = Math.min(width, height) * 0.35; // Increased radius for more spread
+//     const angleStep = (2 * Math.PI) / categories.length;
+    
+//     categories.forEach((category, i) => {
+//         const angle = i * angleStep - Math.PI / 2;
+//         categoryPositions[category] = {
+//             x: width / 2 + radius * Math.cos(angle),
+//             y: height / 2 + radius * Math.sin(angle)
+//         };
+//     });
+    
+//     categoryPositions[centerCategory] = {
+//         x: width / 2,
+//         y: height / 2
+//     };
+
+//     // Create time control container
+//     const timeControl = d3.select("body")
+//         .insert("div", ":first-child")
+//         .attr("class", "time-control")
+//         .style("margin", "20px")
+//         .style("display", "flex")
+//         .style("align-items", "center")
+//         .style("gap", "10px");
+
+//     // Time control elements
+//     const timerDisplay = timeControl
+//         .append("div")
+//         .attr("class", "timer")
+//         .style("font-size", "18px")
+//         .style("font-weight", "bold");
+
+//     const playButton = timeControl
+//         .append("button")
+//         .text("Play/Pause")
+//         .style("padding", "5px 10px");
+
+//     const sliderContainer = timeControl
+//         .append("div")
+//         .style("flex-grow", "1")
+//         .style("margin", "0 20px");
+
+//     const startTime = parseTime("11:00");
+//     const endTime = parseTime("23:55");
+
+//     const timeSlider = sliderContainer
+//         .append("input")
+//         .attr("type", "range")
+//         .attr("min", startTime)
+//         .attr("max", endTime)
+//         .attr("step", 300)
+//         .attr("value", startTime)
+//         .style("width", "100%");
+
+//     const speedControl = timeControl
+//         .append("select")
+//         .style("padding", "5px");
+
+//     const speedOptions = [
+//         { label: "0.5x", value: 2000 },
+//         { label: "1x", value: 1000 },
+//         { label: "2x", value: 500, default: true },
+//         { label: "5x", value: 200 }
+//     ];
+
+//     speedControl
+//         .selectAll("option")
+//         .data(speedOptions)
+//         .enter()
+//         .append("option")
+//         .attr("value", d => d.value)
+//         .attr("selected", d => d.default ? "" : null)
+//         .text(d => d.label);
+
+//     // Create SVG
+//     const svg = d3.select("#chart")
+//         .append("svg")
+//         .attr("width", width)
+//         .attr("height", height);
+
+//     // Increase category region size
+//     const regionRadius = 120; // Increased for more space
+    
+//     svg.selectAll(".category-region")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("circle")
+//         .attr("class", "category-region")
+//         .attr("cx", category => categoryPositions[category].x)
+//         .attr("cy", category => categoryPositions[category].y)
+//         .attr("r", regionRadius)
+//         .style("fill", "none")
+//         .style("stroke", d => colorScale(d))
+//         .style("stroke-width", 2)
+//         .style("opacity", 0.3);
+
+//     // Add category labels
+//     const categoryGroups = svg.selectAll(".category-group")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("g")
+//         .attr("class", "category-group")
+//         .attr("transform", category => 
+//             `translate(${categoryPositions[category].x},${categoryPositions[category].y - regionRadius - 30})`);
+
+//     categoryGroups.append("text")
+//         .attr("class", "category-label")
+//         .attr("text-anchor", "middle")
+//         .attr("y", -10)
+//         .style("font-size", "14px")
+//         .style("font-weight", "bold")
+//         .text(d => d);
+
+//     categoryGroups.append("text")
+//         .attr("class", "category-percentage")
+//         .attr("text-anchor", "middle")
+//         .attr("y", 10)
+//         .style("font-size", "12px")
+//         .text("0%");
+
+//     // Create nodes with increased size
+//    // Create nodes with slightly reduced size
+//    const nodes = Array.from(employeeActivities.keys()).map(employeeId => ({
+//         id: employeeId,
+//         radius: 5, // Reduced from 6 to 5
+//         category: null
+//     }));
+
+//     // Create simulation with adjusted forces
+//     const simulation = d3.forceSimulation()
+//         .force("charge", d3.forceManyBody().strength(-30)) // Reduced repulsion force
+//         .force("collide", d3.forceCollide().radius(7).strength(0.5)) // Reduced collision radius
+//         .force("x", d3.forceX().strength(0.8)) // Increased strength for tighter clustering
+//         .force("y", d3.forceY().strength(0.8)) // Increased strength for tighter clustering
+//         .velocityDecay(0.3); // Reduced for more responsive movement
+
+//     // Create bubbles
+//     const bubbles = svg.selectAll(".bubble")
+//         .data(nodes)
+//         .enter()
+//         .append("circle")
+//         .attr("class", "bubble")
+//         .attr("r", d => d.radius)
+//         .style("fill-opacity", 0.8)
+//         .style("stroke", "#fff")
+//         .style("stroke-width", 0.5);
+
+//     // Add legend
+//     const legend = svg.append("g")
+//         .attr("class", "legend")
+//         .attr("transform", `translate(${width - 250}, 20)`);
+
+//     const legendItems = legend.selectAll(".legend-item")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("g")
+//         .attr("class", "legend-item")
+//         .attr("transform", (d, i) => `translate(0, ${i * 20})`);
+
+//     legendItems.append("text")
+//         .attr("class", "legend-percentage")
+//         .attr("x", 0)
+//         .attr("y", 12)
+//         .style("font-size", "12px")
+//         .style("font-weight", "bold")
+//         .style("text-anchor", "end")
+//         .attr("dx", "30")
+//         .text("0%");
+
+//     legendItems.append("rect")
+//         .attr("x", 40)
+//         .attr("width", 15)
+//         .attr("height", 15)
+//         .style("fill", d => colorScale(d));
+
+//     legendItems.append("text")
+//         .attr("class", "legend-label")
+//         .attr("x", 65)
+//         .attr("y", 12)
+//         .style("font-size", "12px")
+//         .text(d => d);
+
+//     // Add tooltip
+//     const tooltip = d3.select("body").append("div")
+//         .attr("class", "tooltip")
+//         .style("opacity", 0)
+//         .style("position", "absolute")
+//         .style("background-color", "white")
+//         .style("padding", "5px")
+//         .style("border", "1px solid #ddd")
+//         .style("border-radius", "3px");
+
+//     let currentTime = startTime;
+//     let isPlaying = false;
+//     let timeInterval;
+
+//     function updateCategoryPercentages() {
+//         const categoryCounts = {};
+//         let activeNodes = 0;
+        
+//         [...categories, centerCategory].forEach(cat => {
+//             categoryCounts[cat] = 0;
+//         });
+        
+//         nodes.forEach(node => {
+//             if (node.category) {
+//                 categoryCounts[node.category]++;
+//                 activeNodes++;
+//             }
+//         });
+        
+//         svg.selectAll(".category-percentage, .legend-percentage")
+//             .text(d => {
+//                 const percentage = activeNodes > 0 ? 
+//                     (categoryCounts[d] / activeNodes * 100).toFixed(1) : 
+//                     '0.0';
+//                 return `${percentage}%`;
+//             });
+//     }
+
+//     function updatePositions(time) {
+//         nodes.forEach(node => {
+//             const activities = timelineData.get(node.id);
+//             const currentActivity = activities.find(a => 
+//                 time >= a.startTime && time <= a.endTime
+//             );
+            
+//             if (currentActivity) {
+//                 node.category = currentActivity.category;
+//                 // Reduced spread factor for tighter grouping
+//                 const spreadFactor = 0.6; // Reduced from 0.8
+//                 const angle = Math.random() * 2 * Math.PI;
+//                 const spread = Math.random() * regionRadius * spreadFactor;
+                
+//                 node.targetX = categoryPositions[currentActivity.category].x + Math.cos(angle) * spread;
+//                 node.targetY = categoryPositions[currentActivity.category].y + Math.sin(angle) * spread;
+                
+//                 // Increased movement speed for faster grouping
+//                 node.vx = (node.targetX - node.x) * 0.15;
+//                 node.vy = (node.targetY - node.y) * 0.15;
+//             }
+//         });
+    
+//         bubbles.style("fill", d => colorScale(d.category || "none"));
+    
+//         simulation
+//             .force("x", d3.forceX(d => d.targetX).strength(0.8))
+//             .force("y", d3.forceY(d => d.targetY).strength(0.8))
+//             .alpha(0.4)
+//             .restart();
+        
+//         updateCategoryPercentages();
+//     }
+
+//     simulation.nodes(nodes).on("tick", () => {
+//         bubbles
+//             .attr("cx", d => d.x)
+//             .attr("cy", d => d.y);
+//     });
+
+//     function togglePlayPause() {
+//         isPlaying = !isPlaying;
+//         if (isPlaying) {
+//             startAnimation();
+//         } else {
+//             clearInterval(timeInterval);
+//         }
+//     }
+
+//     function startAnimation() {
+//         clearInterval(timeInterval);
+        
+//         function animate() {
+//             currentTime += 600;  // 10 minute increment
+//             if (currentTime >= endTime) {
+//                 currentTime = startTime;
+//             }
+            
+//             timeSlider.node().value = currentTime;
+//             timerDisplay.text(formatTime(currentTime));
+//             updatePositions(currentTime);
+
+//             // Add 4-second delay between updates
+//             setTimeout(() => {
+//                 if (isPlaying) {
+//                     requestAnimationFrame(animate);
+//                 }
+//             }, 4000); // 4000ms = 4 seconds delay
+//         }
+        
+//         if (isPlaying) {
+//             animate();
+//         }
+//     }
+
+//     // Event listeners
+//     playButton.on("click", togglePlayPause);
+    
+//     timeSlider.on("input", function() {
+//         currentTime = +this.value;
+//         timerDisplay.text(formatTime(currentTime));
+//         setTimeout(() => {
+//             updatePositions(currentTime);
+//         }, 100);
+//     });
+
+//     speedControl.on("change", function() {
+//         if (isPlaying) {
+//             startAnimation();
+//         }
+//     });
+
+//     bubbles.on("mouseover", (event, d) => {
+//         tooltip.transition()
+//             .duration(200)
+//             .style("opacity", 0.9);
+//         tooltip.html(`
+//             Employee: ${d.id}<br>
+//             Category: ${d.category || "None"}<br>
+//             Time: ${formatTime(currentTime)}
+//         `)
+//             .style("left", (event.pageX + 10) + "px")
+//             .style("top", (event.pageY - 28) + "px");
+//     })
+//     .on("mouseout", () => {
+//         tooltip.transition()
+//             .duration(500)
+//             .style("opacity", 0);
+//     });
+
+//     // Initialize display
+//     timerDisplay.text(formatTime(currentTime));
+//     updatePositions(currentTime);
+// });
+
+
+
+
+// // Configuration with reduced dimensions
+// const width = 900;
+// const height = 600;
+// const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+// // Time parsing and formatting functions
+// const parseTime = timeStr => {
+//     const [hours, minutes] = timeStr.split(':').map(Number);
+//     return hours * 3600 + minutes * 60;
+// };
+
+// const formatTime = seconds => {
+//     const hours = Math.floor(seconds / 3600);
+//     const minutes = Math.floor((seconds % 3600) / 60);
+//     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+// };
+
+// // Load and process data
+// d3.csv("employee_activities.csv").then(data => {
+//     // Process employee activities
+//     const employeeActivities = d3.group(data, d => d.EmployeeID);
+    
+//     // Create timeline data structure
+//     const timelineData = new Map();
+//     employeeActivities.forEach((activities, employeeId) => {
+//         activities.forEach(activity => {
+//             const startSeconds = parseTime(activity.StartTime);
+//             const endSeconds = parseTime(activity.EndTime);
+            
+//             if (!timelineData.has(employeeId)) {
+//                 timelineData.set(employeeId, []);
+//             }
+            
+//             timelineData.get(employeeId).push({
+//                 startTime: startSeconds,
+//                 endTime: endSeconds,
+//                 category: activity.TaskCategory,
+//                 duration: +activity.Duration_Hours
+//             });
+//         });
+//     });
+
+//     // Get unique categories
+//     let categories = [...new Set(data.map(d => d.TaskCategory))];
+//     categories = categories.filter(cat => cat !== 'Misc');
+//     const centerCategory = 'Misc';
+
+//     // Create category positions with reduced spacing
+//     const categoryPositions = {};
+//     const radius = Math.min(width, height) * 0.28;
+//     const angleStep = (2 * Math.PI) / categories.length;
+    
+//     categories.forEach((category, i) => {
+//         const angle = i * angleStep - Math.PI / 2;
+//         categoryPositions[category] = {
+//             x: width / 2 + radius * Math.cos(angle),
+//             y: height / 2 + radius * Math.sin(angle)
+//         };
+//     });
+    
+//     categoryPositions[centerCategory] = {
+//         x: width / 2,
+//         y: height / 2
+//     };
+
+//     // Create time control container
+//     const timeControl = d3.select("body")
+//         .insert("div", ":first-child")
+//         .attr("class", "time-control")
+//         .style("margin", "20px")
+//         .style("display", "flex")
+//         .style("align-items", "center")
+//         .style("gap", "10px");
+
+//     // Time control elements
+//     const timerDisplay = timeControl
+//         .append("div")
+//         .attr("class", "timer")
+//         .style("font-size", "18px")
+//         .style("font-weight", "bold");
+
+//     const playButton = timeControl
+//         .append("button")
+//         .text("Play/Pause")
+//         .style("padding", "5px 10px");
+
+//     const sliderContainer = timeControl
+//         .append("div")
+//         .style("flex-grow", "1")
+//         .style("margin", "0 20px");
+
+//     const startTime = parseTime("11:00");
+//     const endTime = parseTime("23:55");
+
+//     const timeSlider = sliderContainer
+//         .append("input")
+//         .attr("type", "range")
+//         .attr("min", startTime)
+//         .attr("max", endTime)
+//         .attr("step", 300)
+//         .attr("value", startTime)
+//         .style("width", "100%");
+
+//     const speedControl = timeControl
+//         .append("select")
+//         .style("padding", "5px");
+
+//     const speedOptions = [
+//         { label: "0.5x", value: 2000 },
+//         { label: "1x", value: 1000 },
+//         { label: "2x", value: 500, default: true },
+//         { label: "5x", value: 200 }
+//     ];
+
+//     speedControl
+//         .selectAll("option")
+//         .data(speedOptions)
+//         .enter()
+//         .append("option")
+//         .attr("value", d => d.value)
+//         .attr("selected", d => d.default ? "" : null)
+//         .text(d => d.label);
+
+//     // Create SVG with new dimensions
+//     const svg = d3.select("#chart")
+//         .append("svg")
+//         .attr("width", width)
+//         .attr("height", height);
+
+//     // Reduce category region size
+//     const regionRadius = 90;
+    
+//     svg.selectAll(".category-region")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("circle")
+//         .attr("class", "category-region")
+//         .attr("cx", category => categoryPositions[category].x)
+//         .attr("cy", category => categoryPositions[category].y)
+//         .attr("r", regionRadius)
+//         .style("fill", "none")
+//         .style("stroke", d => colorScale(d))
+//         .style("stroke-width", 2)
+//         .style("opacity", 0.3);
+
+//     // Add category labels
+//     const categoryGroups = svg.selectAll(".category-group")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("g")
+//         .attr("class", "category-group")
+//         .attr("transform", category => 
+//             `translate(${categoryPositions[category].x},${categoryPositions[category].y - regionRadius - 30})`);
+
+//     categoryGroups.append("text")
+//         .attr("class", "category-label")
+//         .attr("text-anchor", "middle")
+//         .attr("y", -10)
+//         .style("font-size", "14px")
+//         .style("font-weight", "bold")
+//         .text(d => d);
+
+//     categoryGroups.append("text")
+//         .attr("class", "category-percentage")
+//         .attr("text-anchor", "middle")
+//         .attr("y", 10)
+//         .style("font-size", "12px")
+//         .text("0%");
+
+//     // Create nodes with reduced size
+//     const nodes = Array.from(employeeActivities.keys()).map(employeeId => ({
+//         id: employeeId,
+//         radius: 4,
+//         category: null
+//     }));
+
+//     // Create simulation with adjusted forces
+//     const simulation = d3.forceSimulation()
+//         .force("charge", d3.forceManyBody().strength(-25))
+//         .force("collide", d3.forceCollide().radius(6).strength(0.5))
+//         .force("x", d3.forceX().strength(0.8))
+//         .force("y", d3.forceY().strength(0.8))
+//         .velocityDecay(0.3);
+
+//     // Create bubbles
+//     const bubbles = svg.selectAll(".bubble")
+//         .data(nodes)
+//         .enter()
+//         .append("circle")
+//         .attr("class", "bubble")
+//         .attr("r", d => d.radius)
+//         .style("fill-opacity", 0.8)
+//         .style("stroke", "#fff")
+//         .style("stroke-width", 0.5);
+
+//     // Add legend
+//     const legend = svg.append("g")
+//         .attr("class", "legend")
+//         .attr("transform", `translate(${width - 200}, 20)`);
+
+//     const legendItems = legend.selectAll(".legend-item")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("g")
+//         .attr("class", "legend-item")
+//         .attr("transform", (d, i) => `translate(0, ${i * 20})`);
+
+//     legendItems.append("text")
+//         .attr("class", "legend-percentage")
+//         .attr("x", 0)
+//         .attr("y", 12)
+//         .style("font-size", "12px")
+//         .style("font-weight", "bold")
+//         .style("text-anchor", "end")
+//         .attr("dx", "30")
+//         .text("0%");
+
+//     legendItems.append("rect")
+//         .attr("x", 40)
+//         .attr("width", 15)
+//         .attr("height", 15)
+//         .style("fill", d => colorScale(d));
+
+//     legendItems.append("text")
+//         .attr("class", "legend-label")
+//         .attr("x", 65)
+//         .attr("y", 12)
+//         .style("font-size", "12px")
+//         .text(d => d);
+
+//     // Add tooltip
+//     const tooltip = d3.select("body").append("div")
+//         .attr("class", "tooltip")
+//         .style("opacity", 0)
+//         .style("position", "absolute")
+//         .style("background-color", "white")
+//         .style("padding", "5px")
+//         .style("border", "1px solid #ddd")
+//         .style("border-radius", "3px");
+
+//     let currentTime = startTime;
+//     let isPlaying = false;
+//     let timeInterval;
+
+//     function updateCategoryPercentages() {
+//         const categoryCounts = {};
+//         let activeNodes = 0;
+        
+//         [...categories, centerCategory].forEach(cat => {
+//             categoryCounts[cat] = 0;
+//         });
+        
+//         nodes.forEach(node => {
+//             if (node.category) {
+//                 categoryCounts[node.category]++;
+//                 activeNodes++;
+//             }
+//         });
+        
+//         svg.selectAll(".category-percentage, .legend-percentage")
+//             .text(d => {
+//                 const percentage = activeNodes > 0 ? 
+//                     (categoryCounts[d] / activeNodes * 100).toFixed(1) : 
+//                     '0.0';
+//                 return `${percentage}%`;
+//             });
+//     }
+
+//     function updatePositions(time) {
+//         nodes.forEach(node => {
+//             const activities = timelineData.get(node.id);
+//             const currentActivity = activities.find(a => 
+//                 time >= a.startTime && time <= a.endTime
+//             );
+            
+//             if (currentActivity) {
+//                 node.category = currentActivity.category;
+//                 const spreadFactor = 0.5;
+//                 const angle = Math.random() * 2 * Math.PI;
+//                 const spread = Math.random() * regionRadius * spreadFactor;
+                
+//                 node.targetX = categoryPositions[currentActivity.category].x + Math.cos(angle) * spread;
+//                 node.targetY = categoryPositions[currentActivity.category].y + Math.sin(angle) * spread;
+                
+//                 node.vx = (node.targetX - node.x) * 0.15;
+//                 node.vy = (node.targetY - node.y) * 0.15;
+//             }
+//         });
+    
+//         bubbles.style("fill", d => colorScale(d.category || "none"));
+    
+//         simulation
+//             .force("x", d3.forceX(d => d.targetX).strength(0.8))
+//             .force("y", d3.forceY(d => d.targetY).strength(0.8))
+//             .alpha(0.4)
+//             .restart();
+        
+//         updateCategoryPercentages();
+//     }
+
+//     simulation.nodes(nodes).on("tick", () => {
+//         bubbles
+//             .attr("cx", d => d.x)
+//             .attr("cy", d => d.y);
+//     });
+
+//     function togglePlayPause() {
+//         isPlaying = !isPlaying;
+//         if (isPlaying) {
+//             startAnimation();
+//         } else {
+//             clearInterval(timeInterval);
+//         }
+//     }
+
+//     function startAnimation() {
+//         clearInterval(timeInterval);
+        
+//         function animate() {
+//             currentTime += 600;  // 10 minute increment
+//             if (currentTime >= endTime) {
+//                 currentTime = startTime;
+//             }
+            
+//             timeSlider.node().value = currentTime;
+//             timerDisplay.text(formatTime(currentTime));
+//             updatePositions(currentTime);
+
+//             // Add 4-second delay between updates
+//             setTimeout(() => {
+//                 if (isPlaying) {
+//                     requestAnimationFrame(animate);
+//                 }
+//             }, 4000);
+//         }
+        
+//         if (isPlaying) {
+//             animate();
+//         }
+//     }
+
+//     // Event listeners
+//     playButton.on("click", togglePlayPause);
+    
+//     timeSlider.on("input", function() {
+//         currentTime = +this.value;
+//         timerDisplay.text(formatTime(currentTime));
+//         setTimeout(() => {
+//             updatePositions(currentTime);
+//         }, 100);
+//     });
+
+//     speedControl.on("change", function() {
+//         if (isPlaying) {
+//             startAnimation();
+//         }
+//     });
+
+//     bubbles.on("mouseover", (event, d) => {
+//         tooltip.transition()
+//             .duration(200)
+//             .style("opacity", 0.9);
+//         tooltip.html(`
+//             Employee: ${d.id}<br>
+//             Category: ${d.category || "None"}<br>
+//             Time: ${formatTime(currentTime)}
+//         `)
+//             .style("left", (event.pageX + 10) + "px")
+//             .style("top", (event.pageY - 28) + "px");
+//     })
+//     .on("mouseout", () => {
+//         tooltip.transition()
+//             .duration(500)
+//             .style("opacity", 0);
+//     });
+
+//     // Initialize display
+//     timerDisplay.text(formatTime(currentTime));
+//     updatePositions(currentTime);
+// });
+
+
+
+
+
+
+// // Configuration
+// const width = 1400;
+// const height = 800;
+// const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+// // Time parsing and formatting functions remain the same
+// const parseTime = timeStr => {
+//     const [hours, minutes] = timeStr.split(':').map(Number);
+//     return hours * 3600 + minutes * 60;
+// };
+
+// const formatTime = seconds => {
+//     const hours = Math.floor(seconds / 3600);
+//     const minutes = Math.floor((seconds % 3600) / 60);
+//     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+// };
+
+// // Load and process data
+// d3.csv("employee_activities.csv").then(data => {
+//     // Process employee activities
+//     const employeeActivities = d3.group(data, d => d.EmployeeID);
+    
+//     // Create timeline data structure
+//     const timelineData = new Map();
+//     employeeActivities.forEach((activities, employeeId) => {
+//         activities.forEach(activity => {
+//             const startSeconds = parseTime(activity.StartTime);
+//             const endSeconds = parseTime(activity.EndTime);
+            
+//             if (!timelineData.has(employeeId)) {
+//                 timelineData.set(employeeId, []);
+//             }
+            
+//             timelineData.get(employeeId).push({
+//                 startTime: startSeconds,
+//                 endTime: endSeconds,
+//                 category: activity.TaskCategory,
+//                 duration: +activity.Duration_Hours
+//             });
+//         });
+//     });
+
+//     // Get unique categories
+//     let categories = [...new Set(data.map(d => d.TaskCategory))];
+//     categories = categories.filter(cat => cat !== 'Misc');
+//     const centerCategory = 'Misc';
+
+//     // Create category positions with MUCH larger spacing
+//     const categoryPositions = {};
+//     const radius = Math.min(width, height) * 0.3; // Decreased to bring categories closer to center
+//     const angleStep = (2 * Math.PI) / categories.length;
+    
+//     categories.forEach((category, i) => {
+//         const angle = i * angleStep - Math.PI / 2;
+//         categoryPositions[category] = {
+//             x: width / 2 + radius * Math.cos(angle),
+//             y: height / 2 + radius * Math.sin(angle)
+//         };
+//     });
+    
+//     categoryPositions[centerCategory] = {
+//         x: width / 2,
+//         y: height / 2
+//     };
+
+//     // Create time control container
+//     const timeControl = d3.select("body")
+//         .insert("div", ":first-child")
+//         .attr("class", "time-control")
+//         .style("margin", "20px")
+//         .style("display", "flex")
+//         .style("align-items", "center")
+//         .style("gap", "10px");
+
+//     // Time control elements (timer, play button, slider, speed control)
+//     const timerDisplay = timeControl
+//         .append("div")
+//         .attr("class", "timer")
+//         .style("font-size", "18px")
+//         .style("font-weight", "bold");
+
+//     const playButton = timeControl
+//         .append("button")
+//         .text("Play/Pause")
+//         .style("padding", "5px 10px");
+
+//     const sliderContainer = timeControl
+//         .append("div")
+//         .style("flex-grow", "1")
+//         .style("margin", "0 20px");
+
+//     const startTime = parseTime("11:00");
+//     const endTime = parseTime("23:55");
+
+//     const timeSlider = sliderContainer
+//         .append("input")
+//         .attr("type", "range")
+//         .attr("min", startTime)
+//         .attr("max", endTime)
+//         .attr("step", 300)
+//         .attr("value", startTime)
+//         .style("width", "100%");
+
+//     const speedControl = timeControl
+//         .append("select")
+//         .style("padding", "5px");
+
+//     const speedOptions = [
+//         { label: "0.5x", value: 2000 },
+//         { label: "1x", value: 1000 },
+//         { label: "2x", value: 500, default: true },
+//         { label: "5x", value: 200 }
+//     ];
+
+//     speedControl
+//         .selectAll("option")
+//         .data(speedOptions)
+//         .enter()
+//         .append("option")
+//         .attr("value", d => d.value)
+//         .attr("selected", d => d.default ? "" : null)
+//         .text(d => d.label);
+
+//     // Create SVG
+//     const svg = d3.select("#chart")
+//         .append("svg")
+//         .attr("width", width)
+//         .attr("height", height);
+
+//     // Add much smaller category regions
+//     const regionRadius = 80; // Decreased region radius
+    
+//     svg.selectAll(".category-region")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("circle")
+//         .attr("class", "category-region")
+//         .attr("cx", category => categoryPositions[category].x)
+//         .attr("cy", category => categoryPositions[category].y)
+//         .attr("r", regionRadius)
+//         .style("fill", "none")
+//         .style("stroke", d => colorScale(d))
+//         .style("stroke-width", 2)
+//         .style("opacity", 0.3);
+
+//     // Add category labels with adjusted positioning
+//     const categoryGroups = svg.selectAll(".category-group")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("g")
+//         .attr("class", "category-group")
+//         .attr("transform", category => 
+//             `translate(${categoryPositions[category].x},${categoryPositions[category].y - regionRadius - 30})`);
+
+//     categoryGroups.append("text")
+//         .attr("class", "category-label")
+//         .attr("text-anchor", "middle")
+//         .attr("y", -10)
+//         .style("font-size", "14px")
+//         .style("font-weight", "bold")
+//         .text(d => d);
+
+//     categoryGroups.append("text")
+//         .attr("class", "category-percentage")
+//         .attr("text-anchor", "middle")
+//         .attr("y", 10)
+//         .style("font-size", "12px")
+//         .text("0%");
+
+//     // Create simulation with adjusted forces
+//     const simulation = d3.forceSimulation()
+//         .force("charge", d3.forceManyBody().strength(-30)) // Increased repulsion
+//         .force("collide", d3.forceCollide().radius(10).strength(1))
+//         .force("x", d3.forceX().strength(0.95)) // Significantly increased x-force
+//         .force("y", d3.forceY().strength(0.95)) // Significantly increased y-force
+//         .velocityDecay(0.3); // Reduced from default 0.4 to maintain momentum
+
+//     // Create nodes
+//     const nodes = Array.from(employeeActivities.keys()).map(employeeId => ({
+//         id: employeeId,
+//         radius: 3,
+//         category: null
+//     }));
+
+//     // Create bubbles
+//     const bubbles = svg.selectAll(".bubble")
+//         .data(nodes)
+//         .enter()
+//         .append("circle")
+//         .attr("class", "bubble")
+//         .attr("r", d => d.radius)
+//         .style("fill-opacity", 0.8)
+//         .style("stroke", "#fff")
+//         .style("stroke-width", 0.5);
+
+//     // Add legend
+//     const legend = svg.append("g")
+//         .attr("class", "legend")
+//         .attr("transform", `translate(${width - 250}, 20)`);
+
+//     const legendItems = legend.selectAll(".legend-item")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("g")
+//         .attr("class", "legend-item")
+//         .attr("transform", (d, i) => `translate(0, ${i * 20})`);
+
+//     legendItems.append("text")
+//         .attr("class", "legend-percentage")
+//         .attr("x", 0)
+//         .attr("y", 12)
+//         .style("font-size", "12px")
+//         .style("font-weight", "bold")
+//         .style("text-anchor", "end")
+//         .attr("dx", "30")
+//         .text("0%");
+
+//     legendItems.append("rect")
+//         .attr("x", 40)
+//         .attr("width", 15)
+//         .attr("height", 15)
+//         .style("fill", d => colorScale(d));
+
+//     legendItems.append("text")
+//         .attr("class", "legend-label")
+//         .attr("x", 65)
+//         .attr("y", 12)
+//         .style("font-size", "12px")
+//         .text(d => d);
+
+//     // Add tooltip
+//     const tooltip = d3.select("body").append("div")
+//         .attr("class", "tooltip")
+//         .style("opacity", 0)
+//         .style("position", "absolute")
+//         .style("background-color", "white")
+//         .style("padding", "5px")
+//         .style("border", "1px solid #ddd")
+//         .style("border-radius", "3px");
+
+//     let currentTime = startTime;
+//     let isPlaying = false;
+//     let timeInterval;
+
+//     function updateCategoryPercentages() {
+//         const categoryCounts = {};
+//         let activeNodes = 0;
+        
+//         [...categories, centerCategory].forEach(cat => {
+//             categoryCounts[cat] = 0;
+//         });
+        
+//         nodes.forEach(node => {
+//             if (node.category) {
+//                 categoryCounts[node.category]++;
+//                 activeNodes++;
+//             }
+//         });
+        
+//         svg.selectAll(".category-percentage, .legend-percentage")
+//             .text(d => {
+//                 const percentage = activeNodes > 0 ? 
+//                     (categoryCounts[d] / activeNodes * 100).toFixed(1) : 
+//                     '0.0';
+//                 return `${percentage}%`;
+//             });
+//     }
+
+//     function updatePositions(time) {
+//         nodes.forEach(node => {
+//             const activities = timelineData.get(node.id);
+//             const currentActivity = activities.find(a => 
+//                 time >= a.startTime && time <= a.endTime
+//             );
+            
+//             if (currentActivity) {
+//                 node.category = currentActivity.category;
+//                 // Add immediate position update for faster initial movement
+//                 node.vx = (categoryPositions[currentActivity.category].x - node.x) * 0.2;
+//                 node.vy = (categoryPositions[currentActivity.category].y - node.y) * 0.2;
+//                 node.targetX = categoryPositions[currentActivity.category].x;
+//                 node.targetY = categoryPositions[currentActivity.category].y;
+//             }
+//         });
+    
+//         bubbles.style("fill", d => colorScale(d.category || "none"));
+    
+//         // Increase alpha (simulation heat) for more energetic movement
+//         simulation
+//             .force("x", d3.forceX(d => d.targetX).strength(0.95))
+//             .force("y", d3.forceY(d => d.targetY).strength(0.95))
+//             .alpha(0.8) // Increased from 0.3
+//             .restart();
+        
+//         updateCategoryPercentages();
+//     }
+
+//     simulation.nodes(nodes).on("tick", () => {
+//         bubbles
+//             .attr("cx", d => d.x)
+//             .attr("cy", d => d.y);
+//     });
+
+//     function togglePlayPause() {
+//         isPlaying = !isPlaying;
+//         if (isPlaying) {
+//             startAnimation();
+//         } else {
+//             clearInterval(timeInterval);
+//         }
+//     }
+    
+//     // [Previous code remains the same until the startAnimation function]
+
+//     function startAnimation() {
+//         clearInterval(timeInterval);
+//         const speed = +speedControl.node().value;
+    
+//         function animate() {
+//             currentTime += 300; // 5-minute increment (adjust as needed)
+//             if (currentTime >= endTime) {
+//                 currentTime = startTime;
+//             }
+    
+//             timeSlider.node().value = currentTime;
+//             timerDisplay.text(formatTime(currentTime));
+//             updatePositions(currentTime);
+    
+//             // Add a 4-second delay before the next update
+//             setTimeout(() => {
+//                 if (isPlaying) {
+//                     animate();
+//                 }
+//             }, 4000); // 4-second delay
+//         }
+    
+//         if (isPlaying) {
+//             animate();
+//         }
+//     }
+
+//     // Modified time slider event handler to include delay
+//     timeSlider.on("input", function() {
+//         currentTime = +this.value;
+//         timerDisplay.text(formatTime(currentTime));
+        
+//         // Add delay before position update
+//         setTimeout(() => {
+//             updatePositions(currentTime);
+//         }, 100); // Small delay for slider updates
+//     });
+
+//     function startAnimation() {
+//         clearInterval(timeInterval);
+//         const speed = +speedControl.node().value;
+        
+//         timeInterval = setInterval(() => {
+//             currentTime += 300;
+//             if (currentTime >= endTime) {
+//                 currentTime = startTime;
+//             }
+//             timeSlider.node().value = currentTime;
+//             timerDisplay.text(formatTime(currentTime));
+//             updatePositions(currentTime);
+//         }, speed);
+//     }
+
+//     // Event listeners
+//     playButton.on("click", togglePlayPause);
+    
+//     timeSlider.on("input", function() {
+//         currentTime = +this.value;
+//         timerDisplay.text(formatTime(currentTime));
+//         updatePositions(currentTime);
+//     });
+
+//     speedControl.on("change", function() {
+//         if (isPlaying) {
+//             startAnimation();
+//         }
+//     });
+
+//     bubbles.on("mouseover", (event, d) => {
+//         tooltip.transition()
+//             .duration(200)
+//             .style("opacity", 0.9);
+//         tooltip.html(`
+//             Employee: ${d.id}<br>
+//             Category: ${d.category || "None"}<br>
+//             Time: ${formatTime(currentTime)}
+//         `)
+//             .style("left", (event.pageX + 10) + "px")
+//             .style("top", (event.pageY - 28) + "px");
+//     })
+//     .on("mouseout", () => {
+//         tooltip.transition()
+//             .duration(500)
+//             .style("opacity", 0);
+//     });
+
+//     // Initialize display
+//     timerDisplay.text(formatTime(currentTime));
+//     updatePositions(currentTime);
+// });
+
+
+
+
+
+
+
+// // Configuration
+// const width = 1400;
+// const height = 800;
+// const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+// // Time parsing and formatting functions
+// const parseTime = timeStr => {
+//     const [hours, minutes] = timeStr.split(':').map(Number);
+//     return hours * 3600 + minutes * 60;
+// };
+
+// const formatTime = seconds => {
+//     const hours = Math.floor(seconds / 3600);
+//     const minutes = Math.floor((seconds % 3600) / 60);
+//     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+// };
+
+// // Load and process data
+// d3.csv("employee_activities.csv").then(data => {
+//     // Process employee activities
+//     const employeeActivities = d3.group(data, d => d.EmployeeID);
+
+//     // Create timeline data structure
+//     const timelineData = new Map();
+//     employeeActivities.forEach((activities, employeeId) => {
+//         activities.forEach(activity => {
+//             const startSeconds = parseTime(activity.StartTime);
+//             const endSeconds = parseTime(activity.EndTime);
+
+//             if (!timelineData.has(employeeId)) {
+//                 timelineData.set(employeeId, []);
+//             }
+
+//             timelineData.get(employeeId).push({
+//                 startTime: startSeconds,
+//                 endTime: endSeconds,
+//                 category: activity.TaskCategory,
+//                 duration: +activity.Duration_Hours
+//             });
+//         });
+//     });
+
+//     // Get unique categories
+//     let categories = [...new Set(data.map(d => d.TaskCategory))];
+//     categories = categories.filter(cat => cat !== 'Misc');
+//     const centerCategory = 'Misc';
+
+//     // Create category positions with MUCH larger spacing
+//     const categoryPositions = {};
+//     const radius = Math.min(width, height) * 0.3; // Decreased to bring categories closer to center
+//     const angleStep = (2 * Math.PI) / categories.length;
+
+//     categories.forEach((category, i) => {
+//         const angle = i * angleStep - Math.PI / 2;
+//         categoryPositions[category] = {
+//             x: width / 2 + radius * Math.cos(angle),
+//             y: height / 2 + radius * Math.sin(angle)
+//         };
+//     });
+
+//     categoryPositions[centerCategory] = {
+//         x: width / 2,
+//         y: height / 2
+//     };
+
+//     // Create time control container
+//     const timeControl = d3.select("body")
+//         .insert("div", ":first-child")
+//         .attr("class", "time-control")
+//         .style("margin", "20px")
+//         .style("display", "flex")
+//         .style("align-items", "center")
+//         .style("gap", "10px");
+
+//     // Time control elements (timer, play button, slider, speed control)
+//     const timerDisplay = timeControl
+//         .append("div")
+//         .attr("class", "timer")
+//         .style("font-size", "18px")
+//         .style("font-weight", "bold");
+
+//     const playButton = timeControl
+//         .append("button")
+//         .text("Play/Pause")
+//         .style("padding", "5px 10px");
+
+//     const sliderContainer = timeControl
+//         .append("div")
+//         .style("flex-grow", "1")
+//         .style("margin", "0 20px");
+
+//     const startTime = parseTime("11:00");
+//     const endTime = parseTime("23:55");
+
+//     const timeSlider = sliderContainer
+//         .append("input")
+//         .attr("type", "range")
+//         .attr("min", startTime)
+//         .attr("max", endTime)
+//         .attr("step", 300)
+//         .attr("value", startTime)
+//         .style("width", "100%");
+
+//     const speedControl = timeControl
+//         .append("select")
+//         .style("padding", "5px");
+
+//     const speedOptions = [
+//         { label: "0.5x", value: 2000 },
+//         { label: "1x", value: 1000 },
+//         { label: "2x", value: 500, default: true },
+//         { label: "5x", value: 200 }
+//     ];
+
+//     speedControl
+//         .selectAll("option")
+//         .data(speedOptions)
+//         .enter()
+//         .append("option")
+//         .attr("value", d => d.value)
+//         .attr("selected", d => d.default ? "" : null)
+//         .text(d => d.label);
+
+//     // Create SVG
+//     const svg = d3.select("#chart")
+//         .append("svg")
+//         .attr("width", width)
+//         .attr("height", height);
+
+//     // Add much smaller category regions
+//     const regionRadius = 80; // Decreased region radius
+
+//     svg.selectAll(".category-region")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("circle")
+//         .attr("class", "category-region")
+//         .attr("cx", category => categoryPositions[category].x)
+//         .attr("cy", category => categoryPositions[category].y)
+//         .attr("r", regionRadius)
+//         .style("fill", "none")
+//         .style("stroke", d => colorScale(d))
+//         .style("stroke-width", 2)
+//         .style("opacity", 0.3);
+
+//     // Add category labels with adjusted positioning
+//     const categoryGroups = svg.selectAll(".category-group")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("g")
+//         .attr("class", "category-group")
+//         .attr("transform", category =>
+//             `translate(${categoryPositions[category].x},${categoryPositions[category].y - regionRadius - 30})`);
+
+//     categoryGroups.append("text")
+//         .attr("class", "category-label")
+//         .attr("text-anchor", "middle")
+//         .attr("y", -10)
+//         .style("font-size", "14px")
+//         .style("font-weight", "bold")
+//         .text(d => d);
+
+//     categoryGroups.append("text")
+//         .attr("class", "category-percentage")
+//         .attr("text-anchor", "middle")
+//         .attr("y", 10)
+//         .style("font-size", "12px")
+//         .text("0%");
+
+//     // Create simulation with adjusted forces
+//     const simulation = d3.forceSimulation()
+//         .force("charge", d3.forceManyBody().strength(-30)) // Increased repulsion
+//         .force("collide", d3.forceCollide().radius(10).strength(1))
+//         .force("x", d3.forceX().strength(0.95)) // Significantly increased x-force
+//         .force("y", d3.forceY().strength(0.95)) // Significantly increased y-force
+//         .velocityDecay(0.3); // Reduced from default 0.4 to maintain momentum
+
+//     // Create nodes
+//     const nodes = Array.from(employeeActivities.keys()).map(employeeId => ({
+//         id: employeeId,
+//         radius: 3,
+//         category: null
+//     }));
+
+//     // Create bubbles
+//     const bubbles = svg.selectAll(".bubble")
+//         .data(nodes)
+//         .enter()
+//         .append("circle")
+//         .attr("class", "bubble")
+//         .attr("r", d => d.radius)
+//         .style("fill-opacity", 0.8)
+//         .style("stroke", "#fff")
+//         .style("stroke-width", 0.5);
+
+//     // Add legend
+//     const legend = svg.append("g")
+//         .attr("class", "legend")
+//         .attr("transform", `translate(${width - 250}, 20)`);
+
+//     const legendItems = legend.selectAll(".legend-item")
+//         .data([...categories, centerCategory])
+//         .enter()
+//         .append("g")
+//         .attr("class", "legend-item")
+//         .attr("transform", (d, i) => `translate(0, ${i * 20})`);
+
+//     legendItems.append("text")
+//         .attr("class", "legend-percentage")
+//         .attr("x", 0)
+//         .attr("y", 12)
+//         .style("font-size", "12px")
+//         .style("font-weight", "bold")
+//         .style("text-anchor", "end")
+//         .attr("dx", "30")
+//         .text("0%");
+
+//     legendItems.append("rect")
+//         .attr("x", 40)
+//         .attr("width", 15)
+//         .attr("height", 15)
+//         .style("fill", d => colorScale(d));
+
+//     legendItems.append("text")
+//         .attr("class", "legend-label")
+//         .attr("x", 65)
+//         .attr("y", 12)
+//         .style("font-size", "12px")
+//         .text(d => d);
+
+//     // Add tooltip
+//     const tooltip = d3.select("body").append("div")
+//         .attr("class", "tooltip")
+//         .style("opacity", 0)
+//         .style("position", "absolute")
+//         .style("background-color", "white")
+//         .style("padding", "5px")
+//         .style("border", "1px solid #ddd")
+//         .style("border-radius", "3px");
+
+//     let currentTime = startTime;
+//     let isPlaying = false;
+//     let timeInterval;
+
+//     function updateCategoryPercentages() {
+//         const categoryCounts = {};
+//         let activeNodes = 0;
+
+//         [...categories, centerCategory].forEach(cat => {
+//             categoryCounts[cat] = 0;
+//         });
+
+//         nodes.forEach(node => {
+//             if (node.category) {
+//                 categoryCounts[node.category]++;
+//                 activeNodes++;
+//             }
+//         });
+
+//         svg.selectAll(".category-percentage, .legend-percentage")
+//             .text(d => {
+//                 const percentage = activeNodes > 0 ?
+//                     (categoryCounts[d] / activeNodes * 100).toFixed(1) :
+//                     '0.0';
+//                 return `${percentage}%`;
+//             });
+//     }
+
+//     function updatePositions(time) {
+//         nodes.forEach(node => {
+//             const activities = timelineData.get(node.id);
+//             const currentActivity = activities.find(a =>
+//                 time >= a.startTime && time <= a.endTime
+//             );
+
+//             if (currentActivity) {
+//                 node.category = currentActivity.category;
+//                 // Add immediate position update for faster initial movement
+//                 node.vx = (categoryPositions[currentActivity.category].x - node.x) * 0.2;
+//                 node.vy = (categoryPositions[currentActivity.category].y - node.y) * 0.2;
+//                 node.targetX = categoryPositions[currentActivity.category].x;
+//                 node.targetY = categoryPositions[currentActivity.category].y;
+//             }
+//         });
+
+//         bubbles.style("fill", d => colorScale(d.category || "none"));
+
+//         // Increase alpha (simulation heat) for more energetic movement
+//         simulation
+//             .force("x", d3.forceX(d => d.targetX).strength(0.95))
+//             .force("y", d3.forceY(d => d.targetY).strength(0.95))
+//             .alpha(0.8) // Increased from 0.3
+//             .restart();
+
+//         updateCategoryPercentages();
+//     }
+
+//     simulation.nodes(nodes).on("tick", () => {
+//         bubbles
+//             .attr("cx", d => d.x)
+//             .attr("cy", d => d.y);
+//     });
+
+//     function togglePlayPause() {
+//         isPlaying = !isPlaying;
+//         if (isPlaying) {
+//             startAnimation();
+//         } else {
+//             clearInterval(timeInterval);
+//         }
+//     }
+
+//     function startAnimation() {
+//         clearInterval(timeInterval);
+//         const speed = +speedControl.node().value;
+
+//         function animate() {
+//             currentTime += 300; // 5-minute increment (adjust as needed)
+//             if (currentTime >= endTime) {
+//                 currentTime = startTime;
+//             }
+
+//             timeSlider.node().value = currentTime;
+//             timerDisplay.text(formatTime(currentTime));
+//             updatePositions(currentTime);
+
+//             // Add a 4-second delay before the next update
+//             setTimeout(() => {
+//                 if (isPlaying) {
+//                     animate();
+//                 }
+//             }, 4000); // 4-second delay
+//         }
+
+//         if (isPlaying) {
+//             animate();
+//         }
+//     }
+
+//     // Event listeners
+//     playButton.on("click", togglePlayPause);
+
+//     timeSlider.on("input", function () {
+//         currentTime = +this.value;
+//         timerDisplay.text(formatTime(currentTime));
+//         updatePositions(currentTime);
+//     });
+
+//     speedControl.on("change", function () {
+//         if (isPlaying) {
+//             startAnimation();
+//         }
+//     });
+
+//     bubbles.on("mouseover", (event, d) => {
+//         tooltip.transition()
+//             .duration(200)
+//             .style("opacity", 0.9);
+//         tooltip.html(`
+//             Employee: ${d.id}<br>
+//             Category: ${d.category || "None"}<br>
+//             Time: ${formatTime(currentTime)}
+//         `)
+//             .style("left", (event.pageX + 10) + "px")
+//             .style("top", (event.pageY - 28) + "px");
+//     })
+//         .on("mouseout", () => {
+//             tooltip.transition()
+//                 .duration(500)
+//                 .style("opacity", 0);
+//         });
+
+//     // Initialize display
+//     timerDisplay.text(formatTime(currentTime));
+//     updatePositions(currentTime);
+// });
+
+
 // Configuration
 const width = 1400;
 const height = 800;
 const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
-// Time parsing and formatting functions remain the same
+// Time parsing and formatting functions
 const parseTime = timeStr => {
     const [hours, minutes] = timeStr.split(':').map(Number);
     return hours * 3600 + minutes * 60;
@@ -2729,18 +4683,18 @@ const formatTime = seconds => {
 d3.csv("employee_activities.csv").then(data => {
     // Process employee activities
     const employeeActivities = d3.group(data, d => d.EmployeeID);
-    
+
     // Create timeline data structure
     const timelineData = new Map();
     employeeActivities.forEach((activities, employeeId) => {
         activities.forEach(activity => {
             const startSeconds = parseTime(activity.StartTime);
             const endSeconds = parseTime(activity.EndTime);
-            
+
             if (!timelineData.has(employeeId)) {
                 timelineData.set(employeeId, []);
             }
-            
+
             timelineData.get(employeeId).push({
                 startTime: startSeconds,
                 endTime: endSeconds,
@@ -2757,9 +4711,9 @@ d3.csv("employee_activities.csv").then(data => {
 
     // Create category positions with MUCH larger spacing
     const categoryPositions = {};
-    const radius = Math.min(width, height) * 0.3; // Decreased to bring categories closer to center
+    const radius = Math.min(width, height) * 0.3;
     const angleStep = (2 * Math.PI) / categories.length;
-    
+
     categories.forEach((category, i) => {
         const angle = i * angleStep - Math.PI / 2;
         categoryPositions[category] = {
@@ -2767,34 +4721,44 @@ d3.csv("employee_activities.csv").then(data => {
             y: height / 2 + radius * Math.sin(angle)
         };
     });
-    
+
     categoryPositions[centerCategory] = {
         x: width / 2,
         y: height / 2
     };
 
-    // Create time control container
+    // Create time control container with adjusted layout
     const timeControl = d3.select("body")
         .insert("div", ":first-child")
         .attr("class", "time-control")
         .style("margin", "20px")
         .style("display", "flex")
-        .style("align-items", "center")
+        .style("flex-direction", "column")
         .style("gap", "10px");
 
-    // Time control elements (timer, play button, slider, speed control)
+    // Timer display in its own row
     const timerDisplay = timeControl
         .append("div")
         .attr("class", "timer")
         .style("font-size", "18px")
-        .style("font-weight", "bold");
+        .style("font-weight", "bold")
+        .style("text-align", "center")
+        .style("margin-top", "50px")  // Added 1 inch (96px) top margin
+        .style("margin-bottom", "10px");
 
-    const playButton = timeControl
+    // Controls container for play button, slider, and speed control
+    const controlsContainer = timeControl
+        .append("div")
+        .style("display", "flex")
+        .style("align-items", "center")
+        .style("gap", "10px");
+
+    const playButton = controlsContainer
         .append("button")
         .text("Play/Pause")
         .style("padding", "5px 10px");
 
-    const sliderContainer = timeControl
+    const sliderContainer = controlsContainer
         .append("div")
         .style("flex-grow", "1")
         .style("margin", "0 20px");
@@ -2811,7 +4775,7 @@ d3.csv("employee_activities.csv").then(data => {
         .attr("value", startTime)
         .style("width", "100%");
 
-    const speedControl = timeControl
+    const speedControl = controlsContainer
         .append("select")
         .style("padding", "5px");
 
@@ -2838,8 +4802,8 @@ d3.csv("employee_activities.csv").then(data => {
         .attr("height", height);
 
     // Add much smaller category regions
-    const regionRadius = 80; // Decreased region radius
-    
+    const regionRadius = 80;
+
     svg.selectAll(".category-region")
         .data([...categories, centerCategory])
         .enter()
@@ -2851,7 +4815,7 @@ d3.csv("employee_activities.csv").then(data => {
         .style("fill", "none")
         .style("stroke", d => colorScale(d))
         .style("stroke-width", 2)
-        .style("opacity", 0.3);
+        .style("opacity", 0.0);
 
     // Add category labels with adjusted positioning
     const categoryGroups = svg.selectAll(".category-group")
@@ -2859,7 +4823,7 @@ d3.csv("employee_activities.csv").then(data => {
         .enter()
         .append("g")
         .attr("class", "category-group")
-        .attr("transform", category => 
+        .attr("transform", category =>
             `translate(${categoryPositions[category].x},${categoryPositions[category].y - regionRadius - 30})`);
 
     categoryGroups.append("text")
@@ -2879,16 +4843,16 @@ d3.csv("employee_activities.csv").then(data => {
 
     // Create simulation with adjusted forces
     const simulation = d3.forceSimulation()
-        .force("charge", d3.forceManyBody().strength(-30)) // Increased repulsion
+        .force("charge", d3.forceManyBody().strength(-30))
         .force("collide", d3.forceCollide().radius(10).strength(1))
-        .force("x", d3.forceX().strength(0.95)) // Significantly increased x-force
-        .force("y", d3.forceY().strength(0.95)) // Significantly increased y-force
-        .velocityDecay(0.3); // Reduced from default 0.4 to maintain momentum
+        .force("x", d3.forceX().strength(0.95))
+        .force("y", d3.forceY().strength(0.95))
+        .velocityDecay(0.3);
 
     // Create nodes
     const nodes = Array.from(employeeActivities.keys()).map(employeeId => ({
         id: employeeId,
-        radius: 5,
+        radius: 3,
         category: null
     }));
 
@@ -2955,22 +4919,22 @@ d3.csv("employee_activities.csv").then(data => {
     function updateCategoryPercentages() {
         const categoryCounts = {};
         let activeNodes = 0;
-        
+
         [...categories, centerCategory].forEach(cat => {
             categoryCounts[cat] = 0;
         });
-        
+
         nodes.forEach(node => {
             if (node.category) {
                 categoryCounts[node.category]++;
                 activeNodes++;
             }
         });
-        
+
         svg.selectAll(".category-percentage, .legend-percentage")
             .text(d => {
-                const percentage = activeNodes > 0 ? 
-                    (categoryCounts[d] / activeNodes * 100).toFixed(1) : 
+                const percentage = activeNodes > 0 ?
+                    (categoryCounts[d] / activeNodes * 100).toFixed(1) :
                     '0.0';
                 return `${percentage}%`;
             });
@@ -2979,29 +4943,27 @@ d3.csv("employee_activities.csv").then(data => {
     function updatePositions(time) {
         nodes.forEach(node => {
             const activities = timelineData.get(node.id);
-            const currentActivity = activities.find(a => 
+            const currentActivity = activities.find(a =>
                 time >= a.startTime && time <= a.endTime
             );
-            
+
             if (currentActivity) {
                 node.category = currentActivity.category;
-                // Add immediate position update for faster initial movement
                 node.vx = (categoryPositions[currentActivity.category].x - node.x) * 0.2;
                 node.vy = (categoryPositions[currentActivity.category].y - node.y) * 0.2;
                 node.targetX = categoryPositions[currentActivity.category].x;
                 node.targetY = categoryPositions[currentActivity.category].y;
             }
         });
-    
+
         bubbles.style("fill", d => colorScale(d.category || "none"));
-    
-        // Increase alpha (simulation heat) for more energetic movement
+
         simulation
             .force("x", d3.forceX(d => d.targetX).strength(0.95))
             .force("y", d3.forceY(d => d.targetY).strength(0.95))
-            .alpha(0.8) // Increased from 0.3
+            .alpha(0.8)
             .restart();
-        
+
         updateCategoryPercentages();
     }
 
@@ -3019,65 +4981,36 @@ d3.csv("employee_activities.csv").then(data => {
             clearInterval(timeInterval);
         }
     }
-    
-    // [Previous code remains the same until the startAnimation function]
 
-function startAnimation() {
-    clearInterval(timeInterval);
-    const speed = +speedControl.node().value;
-    
-    function animate() {
-        currentTime += 600;  // 10 minute increment
-        if (currentTime >= endTime) {
-            currentTime = startTime;
-        }
-        
-        timeSlider.node().value = currentTime;
-        timerDisplay.text(formatTime(currentTime));
-        updatePositions(currentTime);
+    function startAnimation() {
+        clearInterval(timeInterval);
+        const speed = +speedControl.node().value;
 
-        // Add delay between updates using setTimeout
-        setTimeout(() => {
-            if (isPlaying) {
-                requestAnimationFrame(animate);
+        function animate() {
+            currentTime += 300;
+            if (currentTime >= endTime) {
+                currentTime = startTime;
             }
-        }, speed + 100000); // Added 1 second (1000ms) delay after each update
+
+            timeSlider.node().value = currentTime;
+            timerDisplay.text(formatTime(currentTime));
+            updatePositions(currentTime);
+
+            setTimeout(() => {
+                if (isPlaying) {
+                    animate();
+                }
+            }, 4000);
         }
-        
+
         if (isPlaying) {
             animate();
         }
     }
 
-    // Modified time slider event handler to include delay
-    timeSlider.on("input", function() {
-        currentTime = +this.value;
-        timerDisplay.text(formatTime(currentTime));
-        
-        // Add delay before position update
-        setTimeout(() => {
-            updatePositions(currentTime);
-        }, 100); // Small delay for slider updates
-    });
-
-    function startAnimation() {
-        clearInterval(timeInterval);
-        const speed = +speedControl.node().value;
-        
-        timeInterval = setInterval(() => {
-            currentTime += 300;
-            if (currentTime >= endTime) {
-                currentTime = startTime;
-            }
-            timeSlider.node().value = currentTime;
-            timerDisplay.text(formatTime(currentTime));
-            updatePositions(currentTime);
-        }, speed);
-    }
-
     // Event listeners
     playButton.on("click", togglePlayPause);
-    
+
     timeSlider.on("input", function() {
         currentTime = +this.value;
         timerDisplay.text(formatTime(currentTime));

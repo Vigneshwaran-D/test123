@@ -131,8 +131,8 @@ d3.csv("employee_activities.csv").then(data => {
         .style("flex-grow", "1")
         .style("margin", "0 20px");
 
-    const startTime = parseTime("08:00");
-    const endTime = parseTime("23:55");
+    const startTime = parseTime("11:00");
+    const endTime = parseTime("21:55");
 
     const timeSlider = sliderContainer
         .append("input")

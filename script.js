@@ -152,8 +152,8 @@ d3.csv("employee_activities.csv").then(data => {
 
     const speedOptions = [
         { label: "0.5x", value: 2000 },
-        { label: "1x", value: 1000 },
-        { label: "2x", value: 500, default: true },
+        { label: "1x", value: 1000, default: true},
+        { label: "2x", value: 500},
         { label: "5x", value: 200 }
     ];
 

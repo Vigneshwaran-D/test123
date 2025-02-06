@@ -28,6 +28,42 @@ const formatTime = seconds => {
     // return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 };
 
+
+
+const quarters = {
+    'Morning': { start: parseTime('11:00'), end: parseTime('13:30') },
+    'Midday': { start: parseTime('13:30'), end: parseTime('16:00') },
+    'Afternoon': { start: parseTime('16:00'), end: parseTime('18:30') },
+    'Evening': { start: parseTime('18:30'), end: parseTime('20:00') }
+ };
+ 
+ let currentTime = parseTime("11:00");
+
+ // Debugging the moveToNextQuarter function
+function moveToNextQuarter() {
+    console.log("Next button clicked"); // Debugging
+    const currentQuarter = Object.entries(quarters).find(([_, times]) => 
+        currentTime >= times.start && currentTime < times.end
+    );
+    
+    if (currentQuarter) {
+        console.log("Current Quarter:", currentQuarter[0]); // Debugging
+        const quartersList = Object.entries(quarters);
+        const currentIndex = quartersList.findIndex(([name]) => name === currentQuarter[0]);
+        const nextIndex = (currentIndex + 1) % quartersList.length;
+        const nextQuarter = quartersList[nextIndex][1];
+        
+        currentTime = nextQuarter.start;
+        console.log("Moving to Next Quarter:", quartersList[nextIndex][0], "Start Time:", nextQuarter.start); // Debugging
+        timeSlider.node().value = currentTime;
+        timerDisplay.text(formatTime(currentTime));
+        updatePositions(currentTime);
+    } else {
+        console.log("No current quarter found"); // Debugging
+    }
+}
+
+
 // Load and process data
 d3.csv("employee_activities.csv").then(data => {
     // Set the background color of the body and text color
@@ -104,7 +140,7 @@ d3.csv("employee_activities.csv").then(data => {
         .style("font-size", "25px")
         .style("font-weight", "bold")
         .style("text-align", "center")
-        .style("margin-top", "50px")
+        .style("margin-top", "0px")
         .style("margin-bottom", "10px")
         .style("color", "white")
         .style("background-color", "black") // Explicitly set background to black
@@ -120,6 +156,7 @@ d3.csv("employee_activities.csv").then(data => {
     const playButton = controlsContainer
         .append("button")
         .text("Play/Pause")
+        .style("margin-left", "150px")
         .style("padding", "5px 10px")
         .style("background-color", "#333")
         .style("color", "white")
@@ -132,16 +169,27 @@ d3.csv("employee_activities.csv").then(data => {
         .style("margin", "0 20px");
 
     const startTime = parseTime("11:00");
-    const endTime = parseTime("21:55");
+    const endTime = parseTime("20:00");
 
-    const timeSlider = sliderContainer
-        .append("input")
-        .attr("type", "range")
-        .attr("min", startTime)
-        .attr("max", endTime)
-        .attr("step", 300)
-        .attr("value", startTime)
-        .style("width", "100%");
+
+    const timeSlider = d3.select("#timeSlider")
+   .attr("min", parseTime('11:00'))
+   .attr("max", parseTime('20:00'))
+   .attr("value", parseTime('11:00'))
+   .on("input", function() {
+       currentTime = +this.value;
+       timerDisplay.text(formatTime(currentTime));
+       updatePositions(currentTime);
+   });
+
+    // const timeSlider = sliderContainer
+    //     .append("input")
+    //     .attr("type", "range")
+    //     .attr("min", startTime)
+    //     .attr("max", endTime)
+    //     .attr("step", 300)
+    //     .attr("value", startTime)
+    //     .style("width", "100%");
 
     const speedControl = controlsContainer
         .append("select")
@@ -152,8 +200,8 @@ d3.csv("employee_activities.csv").then(data => {
 
     const speedOptions = [
         { label: "0.5x", value: 2000 },
-        { label: "1x", value: 1000, default: true},
-        { label: "2x", value: 500},
+        { label: "1x", value: 1000},
+        { label: "2x", value: 500, default: true},
         { label: "5x", value: 200 }
     ];
 
@@ -278,12 +326,12 @@ categoryGroups.append("text")
 
     // Create simulation with adjusted forces for tighter clustering
     const simulation = d3.forceSimulation()
-        .force("charge", d3.forceManyBody().strength(-1))  // Reduced from -30 to -15 for less repulsion
-        .force("collide", d3.forceCollide().radius(5).strength(0.8))  // Reduced radius from 10 to 5
-        .force("x", d3.forceX().strength(0.4))  // Increased from 0.95 to 0.99 for tighter grouping
-        .force("y", d3.forceY().strength(0.4))  // Increased from 0.95 to 0.99 for tighter grouping
-        .velocityDecay(0.05)  // Increased from 0.3 to 0.4 for more stable clustering
-        .alphaDecay(0.02);
+        .force("charge", d3.forceManyBody().strength(-0.5))  // Reduced from -30 to -15 for less repulsion
+        .force("collide", d3.forceCollide().radius(4).strength(0.2))  // Reduced radius from 10 to 5
+        .force("x", d3.forceX().strength(0.1))  // Increased from 0.95 to 0.99 for tighter grouping
+        .force("y", d3.forceY().strength(0.1))  // Increased from 0.95 to 0.99 for tighter grouping
+        .velocityDecay(0.3)  // Increased from 0.3 to 0.4 for more stable clustering
+        .alphaDecay(0.05);
 
     // Create nodes
     const nodes = Array.from(employeeActivities.keys()).map(employeeId => ({
@@ -354,7 +402,26 @@ categoryGroups.append("text")
         .style("border", "1px solid #555")
         .style("border-radius", "3px");
 
-    // Rest of the code remains the same...
+
+
+    
+    
+    
+    // Add the Next button
+    const nextButton = controlsContainer
+    .append("button")
+    .text("Next")
+    .style("padding", "5px 10px")
+    .style("background-color", "#333")
+    .style("color", "white")
+    .style("border", "1px solid #555")
+    .style("border-radius", "3px")
+    .style("margin-left", "10px")
+    .style("cursor", "pointer")
+    .on("click", moveToNextQuarter);
+
+
+
     let currentTime = startTime;
     let isPlaying = false;
     let timeInterval;
@@ -429,6 +496,287 @@ categoryGroups.append("text")
         }
     }
 
+    // const quarters = {
+    // 'Morning': { start: parseTime('11:00'), end: parseTime('13:30') },
+    // 'Midday': { start: parseTime('13:30'), end: parseTime('16:00') },
+    // 'Afternoon': { start: parseTime('16:00'), end: parseTime('18:30') },
+    // 'Evening': { start: parseTime('18:30'), end: parseTime('20:00') }
+    // };
+
+
+    
+    
+    // function startAnimation() {
+    //     clearInterval(timeInterval);
+    //     let currentQuarterIndex = 0;
+    //     const quartersList = Object.entries(quarters);
+    //     let animationStartTime;
+    //     let animationRequestId;
+    
+    //     // Phase 1: Fast-forward each quarter in 10 seconds
+    //     function animateQuarter() {
+    //         if (!isPlaying) return;
+    
+    //         const [quarterName, quarterTimes] = quartersList[currentQuarterIndex];
+    //         const quarterDuration = quarterTimes.end - quarterTimes.start;
+    //         animationStartTime = Date.now();
+    
+    //         function updateAnimation() {
+    //             if (!isPlaying) {
+    //                 cancelAnimationFrame(animationRequestId);
+    //                 return;
+    //             }
+    
+    //             const elapsed = Date.now() - animationStartTime;
+    //             const progress = Math.min(elapsed / 10000, 1); // 0-1 over 10 seconds
+    //             currentTime = quarterTimes.start + Math.round(progress * quarterDuration);
+    
+    //             // Update UI elements
+    //             timeSlider.node().value = currentTime;
+    //             timerDisplay.text(formatTime(currentTime));
+    //             updatePositions(currentTime);
+    
+    //             if (progress < 1) {
+    //                 animationRequestId = requestAnimationFrame(updateAnimation);
+    //             } else {
+    //                 // After 10 seconds, move to next quarter
+    //                 currentQuarterIndex = (currentQuarterIndex + 1) % quartersList.length;
+    //                 if (currentQuarterIndex === 0) {
+    //                     // If we've looped back to the first quarter, start normal timer
+    //                     startNormalTimer();
+    //                 } else {
+    //                     // Otherwise, continue fast-forwarding the next quarter
+    //                     animateQuarter();
+    //                 }
+    //             }
+    //         }
+    
+    //         updateAnimation();
+    //     }
+    
+    //     // Phase 2: Normal timer progression (1 second = 1 second)
+    //     function startNormalTimer() {
+    //         clearInterval(timeInterval);
+    //         const [quarterName, quarterTimes] = quartersList[currentQuarterIndex];
+    //         currentTime = quarterTimes.start;
+    
+    //         timeInterval = setInterval(() => {
+    //             if (!isPlaying) {
+    //                 clearInterval(timeInterval);
+    //                 return;
+    //             }
+    
+    //             currentTime++;
+    //             if (currentTime > quarterTimes.end) {
+    //                 // Move to next quarter when current ends
+    //                 currentQuarterIndex = (currentQuarterIndex + 1) % quartersList.length;
+    //                 const nextQuarter = quartersList[currentQuarterIndex][1];
+    //                 currentTime = nextQuarter.start;
+    //             }
+    
+    //             // Update UI elements
+    //             timeSlider.node().value = currentTime;
+    //             timerDisplay.text(formatTime(currentTime));
+    //             updatePositions(currentTime);
+    //         }, 1000);
+    //     }
+    
+    //     if (isPlaying) {
+    //         animateQuarter();
+    //     }
+    // }
+
+
+
+    
+    
+    // function startAnimation() {
+    //     clearInterval(timeInterval);
+    //     let currentQuarterIndex = 0;
+    //     const quartersList = Object.entries(quarters);
+    //     let animationStartTime;
+    //     let animationRequestId;
+    
+    //     // Phase 1: Fast-forward each quarter in 10 seconds
+    //     function animateQuarter() {
+    //         if (!isPlaying) return;
+    
+    //         const [quarterName, quarterTimes] = quartersList[currentQuarterIndex];
+    //         const quarterDuration = quarterTimes.end - quarterTimes.start;
+    //         animationStartTime = Date.now();
+    
+    //         function updateAnimation() {
+    //             if (!isPlaying) {
+    //                 cancelAnimationFrame(animationRequestId);
+    //                 return;
+    //             }
+    
+    //             const elapsed = Date.now() - animationStartTime;
+    //             const progress = Math.min(elapsed / 10000, 1); // 0-1 over 10 seconds
+    //             currentTime = quarterTimes.start + Math.round(progress * quarterDuration);
+    
+    //             // Update UI elements
+    //             timeSlider.node().value = currentTime;
+    //             timerDisplay.text(formatTime(currentTime));
+    //             updatePositions(currentTime);
+    
+    //             if (progress < 1) {
+    //                 animationRequestId = requestAnimationFrame(updateAnimation);
+    //             } else {
+    //                 // After 10 seconds, move to next quarter
+    //                 currentQuarterIndex = (currentQuarterIndex + 1) % quartersList.length;
+    //                 if (currentQuarterIndex === 0) {
+    //                     // If we've looped back to the first quarter, start normal timer
+    //                     startNormalTimer();
+    //                 } else {
+    //                     // Otherwise, continue fast-forwarding the next quarter
+    //                     animateQuarter();
+    //                 }
+    //             }
+    //         }
+    
+    //         updateAnimation();
+    //     }
+    
+    //     // Phase 2: Normal timer progression (1 second = 1 second)
+    //     function startNormalTimer() {
+    //         clearInterval(timeInterval);
+    //         const [quarterName, quarterTimes] = quartersList[currentQuarterIndex];
+    //         currentTime = quarterTimes.start;
+    
+    //         timeInterval = setInterval(() => {
+    //             if (!isPlaying) {
+    //                 clearInterval(timeInterval);
+    //                 return;
+    //             }
+    
+    //             currentTime++;
+    //             if (currentTime > quarterTimes.end) {
+    //                 // Move to next quarter when current ends
+    //                 currentQuarterIndex = (currentQuarterIndex + 1) % quartersList.length;
+    //                 const nextQuarter = quartersList[currentQuarterIndex][1];
+    //                 currentTime = nextQuarter.start;
+    //             }
+    
+    //             // Update UI elements
+    //             timeSlider.node().value = currentTime;
+    //             timerDisplay.text(formatTime(currentTime));
+    //             updatePositions(currentTime);
+    //         }, 30000);
+    //     }
+    
+    //     if (isPlaying) {
+    //         animateQuarter();
+    //     }
+    // }
+
+
+
+    // function startAnimation() {
+    //     clearInterval(timeInterval);
+    //     let currentQuarterIndex = 0;
+    //     const quartersList = Object.entries(quarters);
+        
+    //     function animateQuarter() {
+    //         const [quarterName, quarterTimes] = quartersList[currentQuarterIndex];
+    //         currentTime = quarterTimes.start;
+            
+    //         function updateTimer() {
+    //             currentTime++;
+    //             timeSlider.node().value = currentTime;
+    //             timerDisplay.text(formatTime(currentTime));
+    //             updatePositions(currentTime);
+                
+    //             if (currentTime < quarterTimes.end && isPlaying) {
+    //                 setTimeout(updateTimer, 1000);
+    //             } else if (isPlaying) {
+    //                 // Move to the next quarter after the current quarter's time has elapsed
+    //                 currentQuarterIndex = (currentQuarterIndex + 1) % quartersList.length;
+    //                 animateQuarter();
+    //             }
+    //         }
+            
+    //         timeSlider.node().value = currentTime;
+    //         timerDisplay.text(formatTime(currentTime));
+    //         updatePositions(currentTime);
+            
+    //         updateTimer();
+    //     }
+        
+    //     if (isPlaying) {
+    //         animateQuarter();
+    //     }
+    // }
+
+
+    // function startAnimation() {
+    //     clearInterval(timeInterval);
+    //     let currentQuarterIndex = 0;
+    //     const quartersList = Object.entries(quarters);
+        
+    //     function animateQuarter() {
+    //         const [quarterName, quarterTimes] = quartersList[currentQuarterIndex];
+    //         currentTime = quarterTimes.start;
+            
+    //         function updateTimer() {
+    //             currentTime++;
+    //             timeSlider.node().value = currentTime;
+    //             timerDisplay.text(formatTime(currentTime));
+    //             updatePositions(currentTime);
+                
+    //             if (currentTime < quarterTimes.end && isPlaying) {
+    //                 setTimeout(updateTimer, 1000);
+    //             }
+    //         }
+            
+    //         timeSlider.node().value = currentTime;
+    //         timerDisplay.text(formatTime(currentTime));
+    //         updatePositions(currentTime);
+            
+    //         setTimeout(() => {
+    //             currentQuarterIndex = (currentQuarterIndex + 1) % quartersList.length;
+    //             if (isPlaying) {
+    //                 animateQuarter();
+    //             }
+    //         }, 10000);
+            
+    //         updateTimer();
+    //     }
+        
+    //     if (isPlaying) {
+    //         animateQuarter();
+    //     }
+    // }
+    
+
+    // function startAnimation() {
+    //     clearInterval(timeInterval);
+    //     let currentQuarterIndex = 0;
+    //     const quartersList = Object.entries(quarters);
+        
+    //     function animateQuarter() {
+    //         const [quarterName, quarterTimes] = quartersList[currentQuarterIndex];
+    //         currentTime = quarterTimes.start;
+            
+    //         timeSlider.node().value = currentTime;
+    //         timerDisplay.text(formatTime(currentTime));
+    //         updatePositions(currentTime);
+            
+    //         // Move to next quarter after 10 seconds
+    //         setTimeout(() => {
+    //             currentQuarterIndex = (currentQuarterIndex + 1) % quartersList.length;
+    //             if (isPlaying) {
+    //                 animateQuarter();
+    //             }
+    //         }, 10000);
+    //     }
+        
+    //     if (isPlaying) {
+    //         animateQuarter();
+    //     }
+    // }
+
+
     function startAnimation() {
         clearInterval(timeInterval);
         const speed = +speedControl.node().value;
@@ -488,6 +836,9 @@ categoryGroups.append("text")
             .duration(500)
             .style("opacity", 0);
     });
+
+    
+
 
     // Initialize display
     timerDisplay.text(formatTime(currentTime));

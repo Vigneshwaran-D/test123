@@ -57,4 +57,47 @@ body {
     padding: 10px;
     border-radius: 5px;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    z-index: 1000;
 }
+
+
+.period {
+    color: #888;
+    font-style: italic;
+    font-size: 11px;
+    transform: rotate(0deg);
+    align-items: center;
+    /* margin-left: 15px; */
+    white-space: nowrap;
+}
+
+.slider-container {
+    position: absolute;
+    left: 20px;
+    top: 200px; /* Adjust based on your time display position */
+    height: 400px;
+    display: flex;
+    align-items: center;
+}
+
+input[type="range"] {
+    writing-mode: bt-lr;
+    -webkit-appearance: slider-vertical;
+    width: 8px;
+    height: 55vh;
+}
+
+.time-markers {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: space-between;
+    height: 300px;
+    margin-left: 10px;
+    transform: rotate(0deg);
+}
+
+.marker {
+    font-size: 12px;
+    color: #666;
+}
+

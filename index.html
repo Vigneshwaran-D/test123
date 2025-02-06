@@ -11,6 +11,20 @@
 </head>
 <body>
     <div id="chart"></div>
+    <div class="slider-container">
+        <input type="range" id="timeSlider" min="0" max="100" value="0">
+        <div class="time-markers">
+            <span class="marker">-11:00</span>
+            <span class="marker period">Morning</span>
+            <span class="marker">-13:30</span>
+            <span class="marker period">Midday</span>
+            <span class="marker">-16:00</span>
+            <span class="marker period">Afternoon</span>
+            <span class="marker">-18:30</span>
+            <span class="marker period">Evening</span>
+            <span class="marker">-20:00</span>
+        </div>
+    </div>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="script.js"></script>
 </body>
